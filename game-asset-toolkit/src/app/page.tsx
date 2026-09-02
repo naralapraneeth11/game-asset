@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Scaling, Box, Shield } from "lucide-react";
+import { ArrowRight, Scaling, Box, Grid3X3, Shield } from "lucide-react";
 
 const tools = [
   {
@@ -13,6 +13,12 @@ const tools = [
     description: "OBJ · STL · PLY · glTF · GLB · USD · USDZ · Local only",
     href: "/tools/3d-converter",
     icon: Box,
+  },
+  {
+    name: "Sprite Packer",
+    description: "MaxRects BSSF · Alpha trim · Padding · TexturePacker JSON",
+    href: "/tools/sprite-packer",
+    icon: Grid3X3,
   },
 ];
 
