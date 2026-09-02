@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Sidebar from "@/components/Sidebar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,16 +14,20 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Game Asset Toolkit — Fast local asset pipeline for game developers",
+  title: {
+    default: "Game Asset Toolkit",
+    template: "%s · Game Asset Toolkit",
+  },
   description:
-    "Drop PNGs and get game-ready 1x / 2x / 3x assets, sprite sheets, and more. 100% local processing. Built by a game developer for game developers.",
+    "Fast, local-first asset pipeline for game developers. 1x/2x/3x scaling, sprite tools, and more. Files never leave your browser.",
   keywords: [
     "game asset converter",
+    "1x 2x 3x converter",
     "sprite sheet",
-    "1x 2x 3x",
     "Unity assets",
     "pixel art scaler",
     "local image converter",
+    "Retina assets",
   ],
 };
 
@@ -32,11 +37,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
-        {children}
+        <div className="flex h-screen overflow-hidden">
+          <Sidebar />
+          <main className="flex-1 overflow-y-auto bg-[var(--background)]">
+            {children}
+          </main>
+        </div>
       </body>
     </html>
   );
