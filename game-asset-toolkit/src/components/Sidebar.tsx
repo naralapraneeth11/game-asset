@@ -5,8 +5,9 @@ import { usePathname } from "next/navigation";
 import {
   Layers,
   Scaling,
-  Grid3X3,
   Box,
+  Grid3X3,
+  Package,
   Sun,
   Moon,
   Monitor,
@@ -22,11 +23,17 @@ const tools = [
     icon: Scaling,
     href: "/tools/1x-2x-3x-converter",
   },
+  {
+    name: "3D Converter",
+    description: "OBJ · GLB · USD · more",
+    icon: Box,
+    href: "/tools/3d-converter",
+  },
 ] as const;
 
 const soonTools = [
   { name: "Sprite Packer", icon: Grid3X3 },
-  { name: "3D Inspector", icon: Box },
+  { name: "Batch Export", icon: Package },
 ];
 
 function SidebarNav() {
