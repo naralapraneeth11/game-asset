@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "universal3d"
+version = "0.1.0"
+description = "Local-only 3D asset converter. Files never leave this machine."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Game Asset Toolkit" }]
+keywords = ["3d", "converter", "gltf", "usd", "obj", "local", "privacy"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Multimedia :: Graphics :: 3D Modeling",
+]
+dependencies = [
+    "numpy>=1.24",
+    "trimesh>=4.0",
+    "pillow>=10.0",
+    "usd-core>=24.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+universal3d = "universal3d.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["universal3d*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
