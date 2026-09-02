@@ -29,10 +29,15 @@ const tools = [
     icon: Box,
     href: "/tools/3d-converter",
   },
+  {
+    name: "Sprite Packer",
+    description: "Atlas + JSON metadata",
+    icon: Grid3X3,
+    href: "/tools/sprite-packer",
+  },
 ] as const;
 
 const soonTools = [
-  { name: "Sprite Packer", icon: Grid3X3 },
   { name: "Batch Export", icon: Package },
 ];
 
@@ -128,12 +133,10 @@ function SidebarNav() {
 export default function Sidebar() {
   return (
     <>
-      {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-border bg-[var(--sidebar)] py-5 md:flex">
         <SidebarNav />
       </aside>
 
-      {/* Mobile top bar */}
       <div className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-card/80 px-4 py-3 backdrop-blur-xl md:hidden">
         <Link href="/" className="flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900">
