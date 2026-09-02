@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: {
     default: "Game Asset Toolkit",
-    template: "%s · Game Asset Toolkit",
+    template: "%s \u00b7 Game Asset Toolkit",
   },
   description:
     "Fast, local-first asset pipeline for game developers. 1x/2x/3x scaling, sprite tools, and more. Files never leave your browser.",
@@ -37,7 +37,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
