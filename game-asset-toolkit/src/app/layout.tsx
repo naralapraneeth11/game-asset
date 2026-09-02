@@ -61,11 +61,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
         <ThemeProvider>
-          <div className="flex h-screen overflow-hidden">
+          <div className="min-h-screen bg-background">
             <Sidebar />
-            <main className="flex-1 overflow-y-auto bg-[var(--background)]">
+            <div className="md:pl-60">
               {children}
-            </main>
+            </div>
           </div>
         </ThemeProvider>
       </body>
