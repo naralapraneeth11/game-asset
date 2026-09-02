@@ -18,12 +18,12 @@ export const metadata: Metadata = {
 export default function ImageScalerPage() {
   return (
     <div className="min-h-full">
-      <div className="border-b border-neutral-200 bg-white">
+      <div className="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
         <div className="mx-auto max-w-4xl px-6 py-5">
-          <h1 className="text-lg font-semibold tracking-tight text-neutral-900">
+          <h1 className="text-lg font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
             1x / 2x / 3x Image Scaler
           </h1>
-          <p className="mt-0.5 text-[13px] text-neutral-500">
+          <p className="mt-0.5 text-[13px] text-neutral-500 dark:text-neutral-400">
             Drop a PNG → get correctly named 1x, 2x and 3x assets. 100% local.
           </p>
         </div>
