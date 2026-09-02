@@ -1,5 +1,20 @@
 import Link from "next/link";
-import { ArrowRight, Image as ImageIcon, Shield } from "lucide-react";
+import { ArrowRight, Scaling, Box, Shield } from "lucide-react";
+
+const tools = [
+  {
+    name: "1x / 2x / 3x Image Scaler",
+    description: "High-quality and pixel-art modes · Correct naming · ZIP export",
+    href: "/tools/1x-2x-3x-converter",
+    icon: Scaling,
+  },
+  {
+    name: "3D Converter",
+    description: "OBJ · STL · PLY · glTF · GLB · USD · USDZ · Local only",
+    href: "/tools/3d-converter",
+    icon: Box,
+  },
+];
 
 export default function Home() {
   return (
@@ -16,29 +31,32 @@ export default function Home() {
 
         <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-neutral-500 dark:text-neutral-400">
           Clean, fast conversion tools built for indie and professional game
-          developers. Start with the most-used tool or pick from the sidebar.
+          developers. Pick a tool from the sidebar or start below.
         </p>
 
-        <div className="mt-10">
-          <Link
-            href="/tools/1x-2x-3x-converter"
-            className="group flex items-center justify-between rounded-xl border border-neutral-200 bg-white px-5 py-4 transition hover:border-neutral-300 hover:shadow-sm dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700"
-          >
-            <div className="flex items-center gap-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900">
-                <ImageIcon className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="text-[15px] font-medium text-neutral-900 dark:text-neutral-50">
-                  1x / 2x / 3x Image Scaler
+        <div className="mt-10 space-y-3">
+          {tools.map((tool) => (
+            <Link
+              key={tool.href}
+              href={tool.href}
+              className="group flex items-center justify-between rounded-xl border border-neutral-200 bg-white px-5 py-4 transition hover:border-neutral-300 hover:shadow-sm dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700"
+            >
+              <div className="flex items-center gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900">
+                  <tool.icon className="h-5 w-5" />
                 </div>
-                <div className="text-[13px] text-neutral-500 dark:text-neutral-400">
-                  High-quality and pixel-art modes · Correct naming · ZIP export
+                <div>
+                  <div className="text-[15px] font-medium text-neutral-900 dark:text-neutral-50">
+                    {tool.name}
+                  </div>
+                  <div className="text-[13px] text-neutral-500 dark:text-neutral-400">
+                    {tool.description}
+                  </div>
                 </div>
               </div>
-            </div>
-            <ArrowRight className="h-4 w-4 text-neutral-400 transition group-hover:translate-x-0.5 group-hover:text-neutral-700 dark:text-neutral-500 dark:group-hover:text-neutral-300" />
-          </Link>
+              <ArrowRight className="h-4 w-4 text-neutral-400 transition group-hover:translate-x-0.5 group-hover:text-neutral-700 dark:text-neutral-500 dark:group-hover:text-neutral-300" />
+            </Link>
+          ))}
         </div>
 
         <div className="mt-12 flex items-center gap-2 text-[13px] text-neutral-400 dark:text-neutral-500">
