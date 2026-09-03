@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Scaling, Box, Grid3X3, Shield } from "lucide-react";
+import { ArrowRight, Scaling, Box, Grid3X3, Package, Shield } from "lucide-react";
 
 const tools = [
   {
@@ -19,6 +19,12 @@ const tools = [
     description: "MaxRects BSSF · Alpha trim · Padding · TexturePacker JSON",
     href: "/tools/sprite-packer",
     icon: Grid3X3,
+  },
+  {
+    name: "Batch Export",
+    description: "Multi-folder · Presets · Multi-scale · CI-ready",
+    href: "/tools/batch-export",
+    icon: Package,
   },
 ];
 
