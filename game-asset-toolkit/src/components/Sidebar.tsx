@@ -35,11 +35,13 @@ const tools = [
     icon: Grid3X3,
     href: "/tools/sprite-packer",
   },
+  {
+    name: "Batch Export",
+    description: "Multi-folder · Presets · CI",
+    icon: Package,
+    href: "/tools/batch-export",
+  },
 ] as const;
-
-const soonTools = [
-  { name: "Batch Export", icon: Package },
-];
 
 function SidebarNav() {
   const pathname = usePathname();
@@ -82,19 +84,6 @@ function SidebarNav() {
             </Link>
           );
         })}
-
-        {soonTools.map((tool) => (
-          <div
-            key={tool.name}
-            className="flex cursor-default items-center gap-3 rounded-xl px-2.5 py-2 text-sm text-muted-foreground/50"
-          >
-            <tool.icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-            <span className="flex-1">{tool.name}</span>
-            <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground/70">
-              Soon
-            </span>
-          </div>
-        ))}
       </nav>
 
       <div className="px-2 pt-4">
