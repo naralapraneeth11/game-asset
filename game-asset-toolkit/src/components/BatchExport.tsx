@@ -8,26 +8,45 @@ import {
   X,
   FolderOpen,
   Layers,
+  CheckCircle2,
+  Clock,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const PRESETS = [
-  { id: "desktop", label: "Desktop", desc: "PNG · Full res" },
-  { id: "mobile", label: "Mobile", desc: "ASTC · Multi-scale" },
-  { id: "web", label: "Web", desc: "WebP · Basis" },
+  {
+    id: "desktop",
+    label: "Desktop",
+    desc: "PNG · Full resolution",
+    format: "PNG / BC7",
+  },
+  {
+    id: "mobile",
+    label: "Mobile",
+    desc: "ASTC · Multi-scale",
+    format: "ASTC 4×4",
+  },
+  {
+    id: "web",
+    label: "Web",
+    desc: "WebP · Basis / KTX2",
+    format: "WebP / KTX2",
+  },
 ] as const;
 
 const SCALES = [
-  { id: "1x", label: "1×" },
-  { id: "0.5x", label: "0.5×" },
-  { id: "0.25x", label: "0.25×" },
+  { id: "1.0", label: "1×", hint: "Master" },
+  { id: "0.5", label: "0.5×", hint: "Half" },
+  { id: "0.25", label: "0.25×", hint: "Quarter" },
 ] as const;
 
 export default function BatchExport() {
   const [isDragging, setIsDragging] = useState(false);
   const [hasFolders, setHasFolders] = useState(false);
   const [preset, setPreset] = useState<string>("desktop");
-  const [selectedScales, setSelectedScales] = useState<string[]>(["1x"]);
+  const [selectedScales, setSelectedScales] = useState<string[]>(["1.0"]);
+  const [padding, setPadding] = useState(2);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -45,19 +64,16 @@ export default function BatchExport() {
     setHasFolders(true);
   }, []);
 
-  const handleSelect = () => {
-    setHasFolders(true);
-  };
-
-  const clear = () => {
-    setHasFolders(false);
-  };
+  const handleSelect = () => setHasFolders(true);
+  const clear = () => setHasFolders(false);
 
   const toggleScale = (id: string) => {
     setSelectedScales((prev) =>
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
     );
   };
+
+  const activePreset = PRESETS.find((p) => p.id === preset);
 
   return (
     <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
@@ -68,8 +84,12 @@ export default function BatchExport() {
             Batch Export Pipeline
           </span>
           <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
-            Multi-folder
+            Production
           </span>
+        </div>
+        <div className="flex items-center gap-1.5 text-[12px] text-neutral-400 dark:text-neutral-500">
+          <Zap className="h-3.5 w-3.5" />
+          Incremental · Parallel · CI-ready
         </div>
       </div>
 
@@ -99,11 +119,12 @@ export default function BatchExport() {
               <p className="mt-4 text-[14px] font-medium text-neutral-900 dark:text-neutral-100">
                 Drop asset folders or click to select
               </p>
-              <p className="mt-1 text-[13px] text-neutral-500 dark:text-neutral-400">
-                Each folder becomes one atlas · Nested folders supported
+              <p className="mt-1 max-w-sm text-center text-[13px] text-neutral-500 dark:text-neutral-400">
+                Each folder becomes one atlas task. Nested folders supported.
+                Unchanged groups are skipped via content fingerprint.
               </p>
               <p className="mt-4 text-[11px] text-neutral-400 dark:text-neutral-500">
-                UI preview — batch engine coming next
+                UI ready · Engine wires to MaxRects + multi-format encoder
               </p>
             </motion.div>
           ) : (
@@ -123,7 +144,7 @@ export default function BatchExport() {
                   </div>
                   <div>
                     <p className="text-[13px] font-medium text-neutral-900 dark:text-neutral-100">
-                      3 folders queued
+                      3 atlas tasks queued
                     </p>
                     <p className="text-[12px] text-neutral-500 dark:text-neutral-400">
                       ui · characters · effects
@@ -141,7 +162,7 @@ export default function BatchExport() {
               {/* Preset */}
               <div>
                 <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-                  Export preset
+                  Platform preset
                 </p>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {PRESETS.map((p) => (
@@ -171,55 +192,101 @@ export default function BatchExport() {
                 </div>
               </div>
 
-              {/* Scales */}
-              <div>
-                <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-                  Scales
+              {/* Scales + Padding */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                    Scales
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {SCALES.map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => toggleScale(s.id)}
+                        className={cn(
+                          "rounded-lg border px-3 py-1.5 text-[13px] font-medium transition",
+                          selectedScales.includes(s.id)
+                            ? "border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-900"
+                            : "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
+                        )}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                    Padding / Extrude
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="range"
+                      min={0}
+                      max={8}
+                      value={padding}
+                      onChange={(e) => setPadding(Number(e.target.value))}
+                      className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-neutral-200 dark:bg-neutral-700"
+                    />
+                    <span className="w-8 text-right text-[13px] font-medium text-neutral-900 dark:text-neutral-100">
+                      {padding}px
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pipeline stages (production feel) */}
+              <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-800/40">
+                <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                  Pipeline
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {SCALES.map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => toggleScale(s.id)}
-                      className={cn(
-                        "rounded-lg border px-3 py-1.5 text-[13px] font-medium transition",
-                        selectedScales.includes(s.id)
-                          ? "border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-900"
-                          : "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
+                <div className="flex flex-wrap items-center gap-2 text-[12px]">
+                  {[
+                    "Discover",
+                    "Cache check",
+                    "Pack (MaxRects)",
+                    "Encode",
+                    "Metadata",
+                  ].map((stage, i) => (
+                    <div key={stage} className="flex items-center gap-2">
+                      <span className="rounded-md bg-white px-2 py-1 font-medium text-neutral-700 shadow-sm dark:bg-neutral-900 dark:text-neutral-200">
+                        {stage}
+                      </span>
+                      {i < 4 && (
+                        <span className="text-neutral-300 dark:text-neutral-600">→</span>
                       )}
-                    >
-                      {s.label}
-                    </button>
+                    </div>
                   ))}
                 </div>
               </div>
 
-              {/* Mock status */}
-              <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-800/40">
-                <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-                  Queue status
-                </p>
-                <div className="grid grid-cols-2 gap-3 text-[13px] sm:grid-cols-4">
-                  <div>
-                    <p className="text-neutral-500 dark:text-neutral-400">Tasks</p>
-                    <p className="font-medium text-neutral-900 dark:text-neutral-100">3</p>
-                  </div>
-                  <div>
-                    <p className="text-neutral-500 dark:text-neutral-400">Preset</p>
-                    <p className="font-medium text-neutral-900 dark:text-neutral-100 capitalize">
-                      {preset}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-neutral-500 dark:text-neutral-400">Scales</p>
-                    <p className="font-medium text-neutral-900 dark:text-neutral-100">
-                      {selectedScales.join(", ") || "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-neutral-500 dark:text-neutral-400">Cache</p>
-                    <p className="font-medium text-neutral-900 dark:text-neutral-100">Ready</p>
-                  </div>
+              {/* Queue / metrics */}
+              <div className="grid grid-cols-2 gap-3 text-[13px] sm:grid-cols-4">
+                <div className="rounded-lg border border-neutral-200 bg-white p-3 dark:border-neutral-700 dark:bg-neutral-900">
+                  <p className="text-neutral-500 dark:text-neutral-400">Tasks</p>
+                  <p className="mt-0.5 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                    3
+                  </p>
+                </div>
+                <div className="rounded-lg border border-neutral-200 bg-white p-3 dark:border-neutral-700 dark:bg-neutral-900">
+                  <p className="text-neutral-500 dark:text-neutral-400">Preset</p>
+                  <p className="mt-0.5 text-lg font-semibold capitalize text-neutral-900 dark:text-neutral-100">
+                    {preset}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-neutral-200 bg-white p-3 dark:border-neutral-700 dark:bg-neutral-900">
+                  <p className="text-neutral-500 dark:text-neutral-400">Format</p>
+                  <p className="mt-0.5 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                    {activePreset?.format ?? "—"}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-neutral-200 bg-white p-3 dark:border-neutral-700 dark:bg-neutral-900">
+                  <p className="text-neutral-500 dark:text-neutral-400">Cache</p>
+                  <p className="mt-0.5 flex items-center gap-1.5 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                    Ready
+                  </p>
                 </div>
               </div>
 
@@ -235,8 +302,9 @@ export default function BatchExport() {
                 >
                   Clear
                 </button>
-                <p className="ml-auto text-[12px] text-neutral-400 dark:text-neutral-500">
-                  Incremental · Parallel · CI-ready
+                <p className="ml-auto flex items-center gap-1.5 text-[12px] text-neutral-400 dark:text-neutral-500">
+                  <Clock className="h-3.5 w-3.5" />
+                  Unchanged groups skipped
                 </p>
               </div>
             </motion.div>
