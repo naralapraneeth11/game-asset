@@ -3,37 +3,29 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SVG to PNG Studio</title>
-  <style>html,body{margin:0;height:100%;background:#f6f7f9;font:14px/1.5 system-ui,sans-serif;color:#17232b}</style>
+  <title>SVG to PNG Studio — setup</title>
+  <style>
+    body{margin:0;font:15px/1.5 system-ui,sans-serif;background:#f6f7f9;color:#17232b;
+      display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px;}
+    .card{max-width:520px;background:#fff;border:1px solid #e3e8eb;border-radius:16px;padding:28px 32px;
+      box-shadow:0 3px 8px #1b363408;}
+    h1{font-size:18px;margin:0 0 8px;letter-spacing:-.3px;}
+    p{margin:0 0 12px;color:#64727b;font-size:14px;}
+    code{font:12px ui-monospace,SFMono-Regular,monospace;background:#f1f5f4;padding:2px 6px;border-radius:4px;}
+    ol{margin:12px 0 0;padding-left:20px;color:#17232b;font-size:13px;}
+    li{margin-bottom:8px;}
+  </style>
 </head>
 <body>
-  <p id="status" style="padding:24px">Loading SVG to PNG Studio…</p>
-  <script>
-  (async function () {
-    var status = document.getElementById('status');
-    try {
-      var urls = [
-        '/svg-studio-chunk-0.txt',
-        '/svg-studio-chunk-1.txt',
-        '/svg-studio-chunk-2.txt',
-        '/svg-studio-chunk-3.txt',
-        '/svg-studio-chunk-4.txt'
-      ];
-      var parts = await Promise.all(urls.map(function (u) {
-        return fetch(u).then(function (r) {
-          if (!r.ok) throw new Error(u + ' ' + r.status);
-          return r.text();
-        });
-      }));
-      var html = parts.join('');
-      document.open('text/html');
-      document.write(html);
-      document.close();
-    } catch (e) {
-      status.textContent = 'Failed to load studio: ' + (e && e.message ? e.message : e);
-      status.style.color = '#ab3b32';
-    }
-  })();
-  </script>
+  <div class="card">
+    <h1>SVG to PNG Studio</h1>
+    <p>The production engine file is ready on your machine. Drop it into the repo once:</p>
+    <ol>
+      <li>Open GitHub → <code>game-asset</code> → <code>game-asset-toolkit/public/</code></li>
+      <li>Upload <code>svg-to-png-studio.html</code> (replace this placeholder)</li>
+      <li>Commit on <code>main</code> — Vercel redeploys automatically</li>
+    </ol>
+    <p style="margin-top:16px">After that, this route becomes the full local Web / Apple / Android icon studio.</p>
+  </div>
 </body>
 </html>
