@@ -1,31 +1,961 @@
-<!DOCTYPE html>
+<!doctype html>
+<!--
+SVG to PNG Studio — single-file distribution, v1.0.0
+Copyright (c) 2026. Permission is granted to use, modify, and distribute this file.
+
+DEPLOYMENT
+1. Serve this file as text/html over HTTPS, or open it locally. No build, package,
+   CDN, API key, analytics, uploads, or server-side processing is required.
+2. To embed in an existing site, use an iframe whose src points to this file:
+   <iframe src="/tools/svg-to-png-studio.html" title="SVG to PNG Studio"
+           style="width:100%;height:1200px;border:0" loading="lazy"></iframe>
+   If you sandbox the iframe, allow scripts, same-origin, and downloads.
+3. A stricter host CSP must authorize this file's inline style/script (hashes or
+   nonces) and blob workers/images. The meta policy cannot loosen a host policy.
+   connect-src https: is used ONLY after the user chooses to load linked assets.
+4. Branding, limits, presets, UI, renderer, and ZIP writer all live in this file.
+   Prefer embedding the whole page; copying scripts into a CMS may strip them.
+
+ENGINEERING NOTES
+* Uploaded SVG never enters the live HTML DOM. It is parsed in an inert XML
+  document, cleaned, serialized, and rendered exclusively as an image.
+* Native SVG decoding in workers is feature-tested. When unavailable, an Image
+  decodes the vector at each target resolution, then transfers an ImageBitmap to
+  the worker. Older/CSP-restricted browsers use a cooperative canvas fallback.
+* A single-job queue bounds raster memory; pixel scans, compositing, PNG encoding,
+  and ZIP checksums run in the worker when supported. SVG parsing/image decoding
+  can still consume main-thread time. Arbitrarily complex input is not free.
+* ZIP uses the standard STORE method: PNG is already compressed. It retains
+  compressed Blob references, not all raw canvases or base64 PNGs. It is bounded
+  to 128 MiB. This is incremental archive assembly, not disk streaming.
+* Trim uses a <=2048px alpha scan (bounded approximation), then re-renders the
+  original vector at every output size. Very faint/subpixel details can differ.
+* Native font rasterization varies by browser/OS. Embedded CSS/fonts are retained,
+  but outlined text is the portable option. Host-page CSS is never inherited.
+* Linked assets require user action, public HTTPS URLs, CORS, no credentials,
+  no referrer, no redirects, time/size limits, and bounded CSS import recursion.
+  Relative resources in a local SVG cannot be resolved without a source URL.
+* Apple output is a conventional raster asset catalog, not an Icon Composer
+  layered appearance set. Android foregrounds and PWA maskable icons use safe
+  circles. Apple/touch icons are flattened onto the chosen opaque color.
+
+Primary references checked September 2026:
+https://developer.mozilla.org/en-US/docs/Web/SVG/Guides/SVG_as_an_image
+https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas
+https://developer.apple.com/documentation/xcode/configuring-your-app-icon
+https://developer.android.com/develop/ui/compose/system/icon_design_adaptive
+https://www.w3.org/TR/appmanifest/#icon-masks
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SVG to PNG Studio — setup</title>
+  <meta name="description" content="Turn SVG artwork into precisely sized PNGs, favicons, and app icon bundles. Private, local, and completely in your browser.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' blob:; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; worker-src blob:; connect-src https:; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <meta name="color-scheme" content="light">
+  <title>SVG to PNG Studio</title>
   <style>
-    body{margin:0;font:15px/1.5 system-ui,sans-serif;background:#f6f7f9;color:#17232b;
-      display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px;}
-    .card{max-width:520px;background:#fff;border:1px solid #e3e8eb;border-radius:16px;padding:28px 32px;
-      box-shadow:0 3px 8px #1b363408;}
-    h1{font-size:18px;margin:0 0 8px;letter-spacing:-.3px;}
-    p{margin:0 0 12px;color:#64727b;font-size:14px;}
-    code{font:12px ui-monospace,SFMono-Regular,monospace;background:#f1f5f4;padding:2px 6px;border-radius:4px;}
-    ol{margin:12px 0 0;padding-left:20px;color:#17232b;font-size:13px;}
-    li{margin-bottom:8px;}
+    html,body{margin:0;padding:0;background:#f6f7f9}
+    #svg-png-studio{--ink:#17232b;--muted:#64727b;--line:#e3e8eb;--accent:#116b59;--soft:#e8f3ee;--paper:#fff;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);max-width:1240px;margin:0 auto;padding:0 40px 36px;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+    #svg-png-studio *,#svg-png-studio *::before,#svg-png-studio *::after{box-sizing:border-box}
+    #svg-png-studio [hidden]{display:none!important}
+    #svg-png-studio button,#svg-png-studio input,#svg-png-studio select,#svg-png-studio textarea{font:inherit;color:inherit}
+    #svg-png-studio button{cursor:pointer}
+    #svg-png-studio button:disabled{cursor:not-allowed;opacity:.46}
+    #svg-png-studio button,#svg-png-studio a,#svg-png-studio input,#svg-png-studio select,#svg-png-studio textarea{outline-offset:4px}
+    #svg-png-studio :focus-visible{outline:3px solid #198b73}
+    #svg-png-studio a{color:var(--accent)}
+    #svg-png-studio h1,#svg-png-studio h2,#svg-png-studio h3,#svg-png-studio p{margin:0}
+    #svg-png-studio svg.rs-icon{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+    #svg-png-studio .rs-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    #svg-png-studio .rs-top{display:flex;align-items:center;justify-content:space-between;height:92px;border-bottom:1px solid var(--line);gap:16px}
+    #svg-png-studio .rs-brand{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:650;letter-spacing:-.5px}
+    #svg-png-studio .rs-mark{width:32px;height:32px;display:grid;place-items:center;background:var(--ink);color:white;border-radius:10px}
+    #svg-png-studio .rs-brand small{font-size:11px;letter-spacing:1.2px;color:var(--muted);margin-left:5px;font-weight:550}
+    #svg-png-studio .rs-private{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--accent)}
+    #svg-png-studio .rs-dot{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block}
+    #svg-png-studio .rs-hero{padding:41px 0 30px;display:flex;align-items:flex-end;justify-content:space-between;gap:24px}
+    #svg-png-studio .rs-eyebrow{font-size:10px;font-weight:700;letter-spacing:1.8px;color:var(--accent);margin-bottom:10px}
+    #svg-png-studio h1{font-size:clamp(29px,3.6vw,43px);line-height:1.15;letter-spacing:-1.7px;font-weight:650;margin-bottom:13px}
+    #svg-png-studio .rs-lead{font-size:15px;color:var(--muted);max-width:600px}
+    #svg-png-studio .rs-hero-note{color:var(--muted);font-size:11px;white-space:nowrap;padding-bottom:3px}
+    #svg-png-studio .rs-workspace{display:grid;grid-template-columns:minmax(0,1fr) 354px;align-items:start;gap:22px}
+    #svg-png-studio .rs-card{background:var(--paper);border:1px solid var(--line);border-radius:18px;box-shadow:0 3px 8px #1b363403;overflow:hidden}
+    #svg-png-studio .rs-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:19px 23px;border-bottom:1px solid var(--line)}
+    #svg-png-studio h2{font-size:14px;font-weight:650;letter-spacing:-.2px}
+    #svg-png-studio .rs-count{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+    #svg-png-studio .rs-left{min-width:0;display:grid;gap:18px}
+    #svg-png-studio .rs-drop{margin:20px;border:1.5px dashed #cbd5d8;border-radius:13px;padding:32px 18px;text-align:center;background:#fafcfc;transition:background .18s,border-color .18s;position:relative}
+    #svg-png-studio .rs-drop.rs-drag{background:var(--soft);border-color:var(--accent)}
+    #svg-png-studio .rs-upload-glyph{width:45px;height:45px;border:1px solid var(--line);border-radius:13px;background:#fff;display:grid;place-items:center;margin:0 auto 13px;box-shadow:0 3px 6px #17232b05;color:var(--accent)}
+    #svg-png-studio .rs-drop-title{font-weight:600;font-size:15px}
+    #svg-png-studio .rs-drop p{color:var(--muted);font-size:12px;margin:6px 0 17px}
+    #svg-png-studio .rs-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:39px;padding:9px 15px;border:1px solid var(--line);border-radius:9px;background:white;font-weight:550;font-size:12px;text-decoration:none;transition:background .15s,transform .15s}
+    #svg-png-studio .rs-btn:hover:not(:disabled){background:#f3f6f6}
+    #svg-png-studio .rs-btn:active:not(:disabled){transform:translateY(1px)}
+    #svg-png-studio .rs-btn-dark{background:var(--ink);color:#fff;border-color:var(--ink)}
+    #svg-png-studio .rs-btn-dark:hover:not(:disabled){background:#2b3c47}
+    #svg-png-studio .rs-text-btn{background:none;border:0;color:var(--accent);font-size:12px;min-height:36px;padding:6px 9px;border-radius:6px}
+    #svg-png-studio .rs-text-btn:hover:not(:disabled){background:var(--soft)}
+    #svg-png-studio .rs-drop-actions{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;align-items:center}
+    #svg-png-studio .rs-file-list{list-style:none;margin:0;padding:0 20px;max-height:240px;overflow-y:auto}
+    #svg-png-studio .rs-file{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;margin-bottom:9px;background:#fff;padding:6px}
+    #svg-png-studio .rs-file.rs-selected{border-color:#8abcae;background:#f4faf7}
+    #svg-png-studio .rs-file-pick{display:flex;gap:11px;align-items:center;text-align:left;border:0;background:none;min-width:0;flex:1;padding:2px}
+    #svg-png-studio .rs-thumb{width:37px;height:37px;border-radius:7px;object-fit:contain;background:#eef2f2;padding:3px;flex:none}
+    #svg-png-studio .rs-file-meta{min-width:0}
+    #svg-png-studio .rs-file-name{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:550;font-size:12px}
+    #svg-png-studio .rs-file-info{display:block;font-size:10px;color:var(--muted);overflow-wrap:anywhere}
+    #svg-png-studio .rs-icon-btn{border:0;background:none;display:grid;place-items:center;width:34px;min-width:34px;height:34px;border-radius:7px;color:var(--muted)}
+    #svg-png-studio .rs-icon-btn:hover{background:#eaf0ef;color:var(--ink)}
+    #svg-png-studio .rs-upload-bottom{display:flex;justify-content:space-between;align-items:center;padding:0 20px 14px;color:var(--muted);font-size:11px;gap:12px}
+    #svg-png-studio .rs-preview-head{flex-wrap:wrap}
+    #svg-png-studio .rs-preview-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    #svg-png-studio .rs-swatch-group{display:flex;padding:3px;border:1px solid var(--line);border-radius:8px;gap:4px}
+    #svg-png-studio .rs-swatch{border:1px solid #cbd3d7;border-radius:4px;width:20px;height:20px;padding:0}
+    #svg-png-studio .rs-swatch[aria-pressed=true]{outline:2px solid var(--accent);outline-offset:1px}
+    #svg-png-studio .rs-checker{background-color:#fff;background-image:conic-gradient(#e8edef 25%,transparent 0 50%,#e8edef 0 75%,transparent 0);background-size:16px 16px}
+    #svg-png-studio .rs-preview-stage{height:340px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background-color:#f7f9fa;background-image:radial-gradient(#d6dfe1 .7px,transparent .7px);background-size:16px 16px;margin:0 20px;border:1px solid var(--line);border-radius:12px}
+    #svg-png-studio .rs-preview-stage[data-tone=light]{background:#fff}
+    #svg-png-studio .rs-preview-stage[data-tone=dark]{background:#202c33}
+    #svg-png-studio .rs-preview-art{display:block;object-fit:contain;max-width:78%;max-height:78%;box-shadow:0 10px 35px #153c3510}
+    #svg-png-studio .rs-empty-art{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:22px;text-align:center;padding:20px;color:#6c7c83;font-size:12px}
+    #svg-png-studio .rs-empty-grid{display:grid;grid-template-columns:repeat(3,46px);align-items:end;gap:14px;transform:rotate(-8deg)}
+    #svg-png-studio .rs-empty-tile{display:grid;place-items:center;width:46px;height:46px;border:1px solid #d8e2df;background:#eff6f2;border-radius:12px;color:#6c9d8d;box-shadow:0 6px 12px #193c3008}
+    #svg-png-studio .rs-empty-tile:nth-child(2){height:65px;width:65px;margin-left:-9px;border-radius:17px;background:#dcece3;color:#427760}
+    #svg-png-studio .rs-empty-tile:nth-child(3){width:36px;height:36px;margin-left:10px;border-radius:10px}
+    #svg-png-studio .rs-preview-bottom{display:flex;justify-content:space-between;align-items:center;padding:12px 21px 16px;gap:12px;min-height:53px}
+    #svg-png-studio .rs-preview-caption{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+    #svg-png-studio .rs-select{border:1px solid var(--line);background:#fff;border-radius:7px;font-size:11px;padding:7px 26px 7px 9px;max-width:210px;min-height:34px}
+    #svg-png-studio .rs-settings{padding:0;border:0;margin:0;min-width:0}
+    #svg-png-studio .rs-section{padding:21px 23px;border-bottom:1px solid var(--line)}
+    #svg-png-studio .rs-label-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px}
+    #svg-png-studio .rs-label{font-size:12px;font-weight:600}
+    #svg-png-studio .rs-step{font-size:10px;color:#93a09f;font-weight:500;margin-right:8px;letter-spacing:.5px}
+    #svg-png-studio .rs-presets{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+    #svg-png-studio .rs-preset{position:relative;cursor:pointer}
+    #svg-png-studio .rs-preset input{position:absolute;opacity:0;width:1px;height:1px}
+    #svg-png-studio .rs-preset-body{display:flex;flex-direction:column;gap:3px;padding:13px;border:1px solid var(--line);border-radius:10px;min-height:94px;transition:background .15s,border-color .15s}
+    #svg-png-studio .rs-preset input:checked+.rs-preset-body{background:var(--soft);border-color:#73a694}
+    #svg-png-studio .rs-preset input:focus-visible+.rs-preset-body{outline:3px solid #198b73;outline-offset:3px}
+    #svg-png-studio .rs-preset-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;color:var(--muted)}
+    #svg-png-studio .rs-radio-dot{width:12px;height:12px;border:1px solid #c2cccc;border-radius:50%}
+    #svg-png-studio .rs-preset input:checked+.rs-preset-body .rs-radio-dot{border:4px solid var(--accent);background:#fff}
+    #svg-png-studio .rs-preset strong{font-size:12px;font-weight:600}
+    #svg-png-studio .rs-preset small{font-size:10px;color:var(--muted)}
+    #svg-png-studio .rs-help{font-size:11px;color:var(--muted);margin-top:11px;line-height:1.6}
+    #svg-png-studio .rs-range{width:100%;accent-color:var(--accent);height:20px;margin:3px 0 0;cursor:pointer}
+    #svg-png-studio .rs-range-marks{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:1px}
+    #svg-png-studio .rs-value{font-size:12px;font-variant-numeric:tabular-nums;background:#f1f5f4;border:1px solid var(--line);border-radius:6px;padding:2px 8px}
+    #svg-png-studio .rs-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:19px;cursor:pointer}
+    #svg-png-studio .rs-toggle{appearance:none;width:33px;height:20px;border-radius:20px;background:#c7d0d2;position:relative;cursor:pointer;flex:none;margin:0;transition:background .18s}
+    #svg-png-studio .rs-toggle:before{content:"";position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;top:3px;left:3px;box-shadow:0 1px 3px #0002;transition:transform .18s}
+    #svg-png-studio .rs-toggle:checked{background:var(--accent)}
+    #svg-png-studio .rs-toggle:checked:before{transform:translateX(13px)}
+    #svg-png-studio .rs-toggle-copy small{display:block;font-size:10px;color:var(--muted);margin-top:3px}
+    #svg-png-studio .rs-segment{display:flex;background:#f2f5f5;border:1px solid var(--line);border-radius:8px;padding:3px;gap:3px;margin-bottom:12px}
+    #svg-png-studio .rs-segment label{flex:1;text-align:center;cursor:pointer;position:relative}
+    #svg-png-studio .rs-segment input{position:absolute;opacity:0;width:1px;height:1px}
+    #svg-png-studio .rs-segment span{display:block;font-size:11px;border-radius:5px;padding:6px}
+    #svg-png-studio .rs-segment input:checked+span{background:#fff;box-shadow:0 1px 3px #243c3610;font-weight:600}
+    #svg-png-studio .rs-segment input:focus-visible+span{outline:3px solid var(--accent)}
+    #svg-png-studio .rs-color-row{display:flex;align-items:center;gap:8px}
+    #svg-png-studio input[type=color]{height:32px;width:36px;background:white;border:1px solid var(--line);border-radius:6px;padding:3px;cursor:pointer}
+    #svg-png-studio .rs-input{width:100%;min-width:0;border:1px solid #d6dfe1;border-radius:8px;padding:10px 11px;background:#fff;font-size:12px}
+    #svg-png-studio .rs-input:focus{border-color:var(--accent)}
+    #svg-png-studio .rs-color-hex{width:92px;font:12px ui-monospace,SFMono-Regular,monospace;padding:6px 8px;text-transform:uppercase}
+    #svg-png-studio .rs-inline-label{font-size:10px;color:var(--muted);margin-left:auto}
+    #svg-png-studio .rs-custom{margin-top:15px}
+    #svg-png-studio .rs-custom label{display:block;margin-bottom:6px;font-size:11px;font-weight:550}
+    #svg-png-studio .rs-error{color:#ab3b32;font-size:11px;margin-top:7px;overflow-wrap:anywhere}
+    #svg-png-studio .rs-export{padding:21px 23px}
+    #svg-png-studio .rs-export-summary{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;margin-bottom:14px}
+    #svg-png-studio .rs-export-summary span{color:var(--muted);font-size:10px}
+    #svg-png-studio .rs-generate{width:100%;min-height:45px;background:var(--accent);border:1px solid var(--accent);border-radius:9px;color:white;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 3px 5px #12664f15}
+    #svg-png-studio .rs-generate:hover:not(:disabled){background:#0b5949}
+    #svg-png-studio .rs-export-note{font-size:10px;text-align:center;color:var(--muted);margin-top:9px}
+    #svg-png-studio .rs-progress{margin-top:14px}
+    #svg-png-studio progress{width:100%;height:5px;display:block;accent-color:var(--accent);border:0;border-radius:4px;overflow:hidden}
+    #svg-png-studio progress::-webkit-progress-bar{background:#e7eeeb}
+    #svg-png-studio progress::-webkit-progress-value{background:var(--accent);transition:width .15s}
+    #svg-png-studio .rs-progress-line{display:flex;align-items:center;justify-content:space-between;gap:9px;font-size:10px;color:var(--muted);margin-top:6px}
+    #svg-png-studio .rs-progress-line span{overflow-wrap:anywhere}
+    #svg-png-studio .rs-result{margin-top:15px;padding:13px;background:#edf7f1;border:1px solid #cce4d4;border-radius:10px}
+    #svg-png-studio .rs-result strong{font-size:12px;display:block;margin-bottom:4px}
+    #svg-png-studio .rs-result p{font-size:11px;color:var(--muted);margin-bottom:10px}
+    #svg-png-studio .rs-result .rs-btn{width:100%}
+    #svg-png-studio .rs-alert{background:#fffbf1;border:1px solid #ecdfba;border-radius:11px;padding:14px 16px;font-size:12px;overflow-wrap:anywhere;line-height:1.6}
+    #svg-png-studio .rs-alert h3{font-size:12px;margin-bottom:5px}
+    #svg-png-studio .rs-alert ul{padding-left:18px;margin:7px 0;max-height:150px;overflow:auto;font-size:11px}
+    #svg-png-studio .rs-alert .rs-btn{margin-top:9px}
+    #svg-png-studio .rs-plan{margin-top:22px}
+    #svg-png-studio .rs-plan summary{cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 23px;list-style:none}
+    #svg-png-studio .rs-plan summary::-webkit-details-marker{display:none}
+    #svg-png-studio .rs-plan-title{display:flex;gap:10px;align-items:center;font-weight:600;font-size:13px}
+    #svg-png-studio .rs-plan[open] .rs-chevron{transform:rotate(180deg)}
+    #svg-png-studio .rs-plan-body{padding:0 23px 22px}
+    #svg-png-studio .rs-table-wrap{overflow:auto;max-height:290px;border:1px solid var(--line);border-radius:9px}
+    #svg-png-studio table{border-collapse:collapse;width:100%;font-size:11px;text-align:left}
+    #svg-png-studio th{font-size:10px;font-weight:600;color:var(--muted);background:#f6f8f8;position:sticky;top:0}
+    #svg-png-studio th,#svg-png-studio td{padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+    #svg-png-studio td:first-child{font-family:ui-monospace,SFMono-Regular,monospace;font-size:10px}
+    #svg-png-studio tr:last-child td{border:0}
+    #svg-png-studio .rs-foot{display:grid;grid-template-columns:repeat(3,1fr);gap:30px;padding:30px 5px}
+    #svg-png-studio .rs-foot h3{font-size:12px;font-weight:600;margin-bottom:5px;display:flex;gap:8px;align-items:center}
+    #svg-png-studio .rs-foot p{font-size:11px;color:var(--muted);line-height:1.65}
+    #svg-png-studio .rs-bottom{display:flex;justify-content:space-between;align-items:center;gap:20px;border-top:1px solid var(--line);padding-top:19px;font-size:10px;color:var(--muted)}
+    #svg-png-studio dialog{border:1px solid var(--line);border-radius:16px;padding:0;width:min(580px,calc(100vw - 30px));max-height:90dvh;overflow:auto;color:var(--ink);box-shadow:0 20px 80px #0c30282b}
+    #svg-png-studio dialog::backdrop{background:#152d2866;backdrop-filter:blur(3px)}
+    #svg-png-studio .rs-dialog-body{padding:22px}
+    #svg-png-studio textarea{min-height:210px;resize:vertical;font:12px/1.6 ui-monospace,SFMono-Regular,monospace!important;margin-top:12px}
+    #svg-png-studio .rs-dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+    #svg-png-studio .rs-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:white;border-radius:10px;padding:12px 19px;box-shadow:0 8px 30px #0002;z-index:10;font-size:12px;max-width:calc(100vw - 32px);width:max-content;white-space:normal}
+    #svg-png-studio .rs-busy{animation:rs-pulse 1.6s ease-in-out infinite}
+    @keyframes rs-pulse{50%{opacity:.5}}
+    @media(prefers-reduced-motion:reduce){#svg-png-studio *,#svg-png-studio *::before{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+    @media(max-width:950px){#svg-png-studio{padding:0 24px 28px}#svg-png-studio .rs-workspace{grid-template-columns:minmax(0,1fr) 320px;gap:16px}#svg-png-studio .rs-hero-note{display:none}#svg-png-studio .rs-section,#svg-png-studio .rs-export{padding:18px}#svg-png-studio .rs-preview-stage{height:315px}#svg-png-studio .rs-card-head{padding:17px 19px}}
+    @media(max-width:730px){#svg-png-studio{padding:0 17px 25px}#svg-png-studio .rs-top{height:74px}#svg-png-studio .rs-brand small{display:none}#svg-png-studio .rs-hero{padding:30px 0 24px}#svg-png-studio h1{letter-spacing:-1.1px}#svg-png-studio .rs-lead{font-size:13px}#svg-png-studio .rs-workspace{grid-template-columns:1fr}#svg-png-studio .rs-drop{padding:24px 12px;margin:15px}#svg-png-studio .rs-preview-stage{height:280px;margin:0 15px}#svg-png-studio .rs-foot{grid-template-columns:1fr;gap:20px;padding:26px 3px}#svg-png-studio .rs-preview-art{max-width:75%;max-height:75%}#svg-png-studio .rs-preset-body{min-height:88px}#svg-png-studio .rs-bottom{align-items:start}#svg-png-studio .rs-private{font-size:10px}#svg-png-studio .rs-preview-head{gap:10px}#svg-png-studio .rs-select{max-width:190px}}
+    @media(forced-colors:active){#svg-png-studio .rs-toggle{appearance:auto}#svg-png-studio .rs-toggle:before{display:none}#svg-png-studio .rs-preset input:checked+.rs-preset-body{outline:2px solid Highlight}}
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>SVG to PNG Studio</h1>
-    <p>The production engine file is ready on your machine. Drop it into the repo once:</p>
-    <ol>
-      <li>Open GitHub → <code>game-asset</code> → <code>game-asset-toolkit/public/</code></li>
-      <li>Upload <code>svg-to-png-studio.html</code> (replace this placeholder)</li>
-      <li>Commit on <code>main</code> — Vercel redeploys automatically</li>
-    </ol>
-    <p style="margin-top:16px">After that, this route becomes the full local Web / Apple / Android icon studio.</p>
+<main id="svg-png-studio">
+  <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"><defs>
+    <symbol id="rs-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z M3 12l9 5 9-5 M3 16l9 5 9-5"/></symbol>
+    <symbol id="rs-upload" viewBox="0 0 24 24"><path d="M12 16V3m-5 5 5-5 5 5M4 16v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></symbol>
+    <symbol id="rs-download" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 16v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></symbol>
+    <symbol id="rs-code" viewBox="0 0 24 24"><path d="m7 7-5 5 5 5m10-10 5 5-5 5m-3-14-4 22"/></symbol>
+    <symbol id="rs-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></symbol>
+    <symbol id="rs-apple" viewBox="0 0 24 24"><path d="M15 3c-2 0-3 1-3 3 2 0 3-1 3-3Z M16 7c-2-1-3 1-4 1s-3-2-5 0C1 12 7 23 10 21c1-.6 3-.6 4 0 2 1 5-3 6-6-4-1-5-5-2-7Z"/></symbol>
+    <symbol id="rs-android" viewBox="0 0 24 24"><path d="m7 4-2-2m12 2 2-2M4 11a8 8 0 0 1 16 0H4Zm0 3h16v5H4Zm4 5v3m8-3v3M1 13v5m22-5v5"/><path d="M8 8h.01M16 8h.01" stroke-width="2.5"/></symbol>
+    <symbol id="rs-size" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 4v4M15 4v2M4 9h4M4 15h2m8 3 4-4m-4 0h4v4"/></symbol>
+    <symbol id="rs-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+    <symbol id="rs-shield" viewBox="0 0 24 24"><path d="m12 2 8 4v6c0 5-8 10-8 10S4 17 4 12V6l8-4Z m-4 10 3 3 5-6"/></symbol>
+    <symbol id="rs-spark" viewBox="0 0 24 24"><path d="m12 2 3 7 7 3-7 3-3 7-3-7-7-3 7-3 3-7Z"/></symbol>
+    <symbol id="rs-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="rs-file" viewBox="0 0 24 24"><path d="M14 2H5v20h14V7l-5-5Zm0 0v5h5M8 12h8M8 16h5"/></symbol>
+  </defs></svg>
+  <header class="rs-top">
+    <div class="rs-brand"><span class="rs-mark"><svg class="rs-icon" aria-hidden="true"><use href="#rs-layers"/></svg></span>Raster<span><small>SVG STUDIO</small></span></div>
+    <div class="rs-private"><span class="rs-dot"></span>Files stay on your device</div>
+  </header>
+  <section class="rs-hero" aria-labelledby="rs-title">
+    <div><div class="rs-eyebrow">SMALL DETAILS. EVERY PIXEL.</div><h1 id="rs-title">One SVG. Every size.</h1><p class="rs-lead">Turn your artwork into a complete PNG set.<br>Fine-tune once. Export for wherever it’s going.</p></div>
+    <span class="rs-hero-note">SVG → PNG + ZIP &nbsp; / &nbsp; No sign-up. No uploads.</span>
+  </section>
+  <noscript><p class="rs-alert">This tool needs JavaScript to process images locally. Enable JavaScript and reload this page.</p></noscript>
+  <div class="rs-workspace">
+    <div class="rs-left">
+      <section class="rs-card" aria-labelledby="rs-source-heading">
+        <div class="rs-card-head"><h2 id="rs-source-heading">Your artwork</h2><span class="rs-count" id="rs-source-count">SVG files · up to 5 MB each</span></div>
+        <div class="rs-drop" id="rs-drop">
+          <div class="rs-upload-glyph"><svg class="rs-icon" aria-hidden="true"><use href="#rs-upload"/></svg></div>
+          <div class="rs-drop-title" id="rs-drop-title">Drop your SVG files here</div>
+          <p>Bring one icon or a whole collection. Up to 20 files.</p>
+          <div class="rs-drop-actions"><button class="rs-btn rs-btn-dark" id="rs-browse" type="button">Choose files</button><button class="rs-text-btn" id="rs-paste-open" type="button"><svg class="rs-icon" style="width:13px;height:13px;vertical-align:-2px;margin-right:4px" aria-hidden="true"><use href="#rs-code"/></svg>Paste SVG</button></div>
+          <input type="file" id="rs-file-input" accept=".svg,image/svg+xml" multiple hidden>
+        </div>
+        <ul class="rs-file-list" id="rs-files" aria-label="Uploaded artwork"></ul>
+        <div class="rs-upload-bottom"><span id="rs-upload-note">Just exploring?</span><button class="rs-text-btn" id="rs-sample" type="button">Try a sample ↗</button><button class="rs-text-btn" id="rs-clear" type="button" hidden>Clear all</button></div>
+      </section>
+      <div id="rs-alerts" class="rs-alert" role="status" hidden></div>
+      <section class="rs-card" aria-labelledby="rs-preview-heading">
+        <div class="rs-card-head rs-preview-head" style="border:0"><h2 id="rs-preview-heading">Preview</h2><div class="rs-preview-controls"><select id="rs-preview-size" class="rs-select" aria-label="Preview output size"></select><div class="rs-swatch-group" aria-label="Preview backdrop"><button class="rs-swatch rs-checker" data-tone="grid" aria-label="Grid backdrop" aria-pressed="true" type="button"></button><button class="rs-swatch" style="background:white" data-tone="light" aria-label="Light backdrop" aria-pressed="false" type="button"></button><button class="rs-swatch" style="background:#202c33" data-tone="dark" aria-label="Dark backdrop" aria-pressed="false" type="button"></button></div></div></div>
+        <div class="rs-preview-stage" id="rs-stage" data-tone="grid">
+          <div class="rs-empty-art" id="rs-preview-empty"><div class="rs-empty-grid" aria-hidden="true"><span class="rs-empty-tile"><svg class="rs-icon"><use href="#rs-spark"/></svg></span><span class="rs-empty-tile"><svg class="rs-icon" style="width:30px;height:30px"><use href="#rs-spark"/></svg></span><span class="rs-empty-tile"><svg class="rs-icon" style="width:16px;height:16px"><use href="#rs-spark"/></svg></span></div><span>Your next icon set starts here.</span></div>
+          <img id="rs-preview-img" class="rs-preview-art" alt="" hidden>
+        </div>
+        <div class="rs-preview-bottom"><span class="rs-preview-caption" id="rs-preview-caption">Add an SVG to see your export.</span><button class="rs-text-btn" id="rs-download-png" type="button" disabled>Download PNG ↓</button></div>
+      </section>
+    </div>
+    <aside class="rs-card" aria-labelledby="rs-settings-heading">
+      <div class="rs-card-head"><h2 id="rs-settings-heading">Make it yours</h2><button class="rs-text-btn" id="rs-reset" type="button" style="min-height:23px;padding:0 4px">Reset</button></div>
+      <fieldset class="rs-settings" id="rs-settings"><legend class="rs-sr">Export settings</legend>
+        <div class="rs-section">
+          <div class="rs-label-row"><span class="rs-label" id="rs-preset-label"><span class="rs-step">01</span>Choose a destination</span></div>
+          <div class="rs-presets" role="radiogroup" aria-labelledby="rs-preset-label">
+            <label class="rs-preset"><input type="radio" name="rs-preset" value="web" checked><span class="rs-preset-body"><span class="rs-preset-top"><svg class="rs-icon" aria-hidden="true"><use href="#rs-globe"/></svg><span class="rs-radio-dot"></span></span><strong>Web</strong><small>Favicons + PWA</small></span></label>
+            <label class="rs-preset"><input type="radio" name="rs-preset" value="apple"><span class="rs-preset-body"><span class="rs-preset-top"><svg class="rs-icon" aria-hidden="true"><use href="#rs-apple"/></svg><span class="rs-radio-dot"></span></span><strong>Apple</strong><small>iOS, iPadOS + macOS</small></span></label>
+            <label class="rs-preset"><input type="radio" name="rs-preset" value="android"><span class="rs-preset-body"><span class="rs-preset-top"><svg class="rs-icon" aria-hidden="true"><use href="#rs-android"/></svg><span class="rs-radio-dot"></span></span><strong>Android</strong><small>Legacy + adaptive</small></span></label>
+            <label class="rs-preset"><input type="radio" name="rs-preset" value="custom"><span class="rs-preset-body"><span class="rs-preset-top"><svg class="rs-icon" aria-hidden="true"><use href="#rs-size"/></svg><span class="rs-radio-dot"></span></span><strong>Custom</strong><small>Your exact dimensions</small></span></label>
+          </div>
+          <div class="rs-custom" id="rs-custom" hidden><label for="rs-custom-sizes">Output sizes in pixels</label><input class="rs-input" id="rs-custom-sizes" value="64, 128, 256, 512, 1024" placeholder="64, 128, 1200x630" spellcheck="false" aria-describedby="rs-custom-help rs-custom-error"><p class="rs-help" id="rs-custom-help">Comma-separated squares or W×H. 1–4096 px, up to 32 sizes. Artwork keeps its proportions.</p><p id="rs-custom-error" class="rs-error" role="alert" hidden></p></div>
+          <p class="rs-help" id="rs-preset-help"></p>
+        </div>
+        <div class="rs-section">
+          <label class="rs-toggle-row" for="rs-trim"><span class="rs-toggle-copy"><span class="rs-label"><span class="rs-step">02</span>Trim empty space</span><small>Fit the canvas to the visible artwork.</small></span><input id="rs-trim" type="checkbox" class="rs-toggle" checked></label>
+          <div class="rs-label-row" style="margin-bottom:4px"><label for="rs-padding" class="rs-label">Padding</label><output for="rs-padding" class="rs-value" id="rs-padding-value">10%</output></div><input id="rs-padding" type="range" class="rs-range" min="0" max="35" step="1" value="10" aria-describedby="rs-padding-help"><div class="rs-range-marks"><span>None</span><span>Balanced</span><span>Spacious</span></div><p class="rs-help" id="rs-padding-help">Inset on each side. Safe-zone outputs add platform protection.</p>
+        </div>
+        <div class="rs-section">
+          <div class="rs-label-row"><span class="rs-label" id="rs-bg-label"><span class="rs-step">03</span>Background</span></div>
+          <div class="rs-segment" role="radiogroup" aria-labelledby="rs-bg-label"><label><input type="radio" name="rs-background" value="transparent" checked><span>Transparent</span></label><label><input type="radio" name="rs-background" value="solid"><span>Solid color</span></label></div>
+          <div class="rs-color-row"><input type="color" id="rs-color" value="#ffffff" aria-label="Background color"><input class="rs-input rs-color-hex" id="rs-color-hex" value="#FFFFFF" maxlength="7" spellcheck="false" aria-label="Background hex color"><span class="rs-inline-label" id="rs-color-label">Opaque icon fill</span></div><p class="rs-help" id="rs-bg-help">Touch and maskable icons always use this solid color.</p>
+        </div>
+      </fieldset>
+      <div class="rs-export"><div class="rs-export-summary"><strong id="rs-total">7 PNGs per SVG</strong><span>Packaged as ZIP</span></div><button class="rs-generate" type="button" id="rs-generate" disabled><svg class="rs-icon" aria-hidden="true"><use href="#rs-download"/></svg><span id="rs-generate-label">Generate icon set</span></button><p class="rs-export-note" id="rs-export-note">Add artwork to get started.</p>
+        <div id="rs-progress" class="rs-progress" hidden><progress id="rs-progress-bar" value="0" max="100" aria-label="Export progress"></progress><div class="rs-progress-line"><span id="rs-progress-text">Preparing artwork…</span><button id="rs-cancel" class="rs-text-btn" type="button">Cancel</button></div></div>
+        <p id="rs-export-error" class="rs-error" role="alert" hidden></p>
+        <div class="rs-result" id="rs-result" hidden><strong>Your icon set is ready.</strong><p id="rs-result-meta"></p><button class="rs-btn" id="rs-download-zip" type="button"><svg class="rs-icon" aria-hidden="true"><use href="#rs-download"/></svg>Download ZIP</button></div>
+      </div>
+    </aside>
   </div>
+  <details class="rs-card rs-plan" id="rs-plan"><summary><span class="rs-plan-title"><svg class="rs-icon" aria-hidden="true"><use href="#rs-file"/></svg>Inside your export <span class="rs-count" id="rs-plan-count"></span></span><svg class="rs-icon rs-chevron" aria-hidden="true"><use href="#rs-chevron"/></svg></summary><div class="rs-plan-body"><div class="rs-table-wrap"><table><caption class="rs-sr">Output files for each SVG</caption><thead><tr><th scope="col">File</th><th scope="col">Pixels</th><th scope="col">Purpose</th></tr></thead><tbody id="rs-plan-rows"></tbody></table></div><p class="rs-help" id="rs-plan-note"></p></div></details>
+  <section class="rs-foot" aria-label="How the tool works"><div><h3><svg class="rs-icon" aria-hidden="true"><use href="#rs-shield"/></svg>Private by design</h3><p>Your SVGs are processed on your device. Linked images or fonts are fetched only when you choose to load them.</p></div><div><h3><svg class="rs-icon" aria-hidden="true"><use href="#rs-size"/></svg>Made for the destination</h3><p>Exact pixel sizes, safe padding, and the supporting files you need to bring an icon set into your project.</p></div><div><h3><svg class="rs-icon" aria-hidden="true"><use href="#rs-layers"/></svg>Ready as a collection</h3><p>Each SVG gets its own folder. Export a single PNG, or keep the whole set together in one organized ZIP.</p></div></section>
+  <footer class="rs-bottom"><span>Raster · SVG to PNG Studio</span><button class="rs-text-btn" id="rs-about-open" type="button" style="padding:0;min-height:24px;font-size:10px">Rendering & privacy notes</button></footer>
+  <dialog id="rs-paste-dialog" aria-labelledby="rs-paste-heading"><div class="rs-card-head"><h2 id="rs-paste-heading">Paste your SVG</h2><button class="rs-icon-btn" type="button" data-close="rs-paste-dialog" aria-label="Close paste dialog"><svg class="rs-icon" aria-hidden="true"><use href="#rs-close"/></svg></button></div><form id="rs-paste-form" class="rs-dialog-body"><label class="rs-label" for="rs-paste-name">File name</label><input id="rs-paste-name" class="rs-input" value="artwork.svg" maxlength="100" style="margin-top:6px"><label class="rs-sr" for="rs-paste-text">SVG markup</label><textarea class="rs-input" id="rs-paste-text" spellcheck="false" placeholder="<svg viewBox=&quot;0 0 24 24&quot; …>…</svg>" required></textarea><p class="rs-help">Include any CSS your SVG needs inside a &lt;style&gt; block. Text converted to paths is the most portable.</p><div class="rs-dialog-actions"><button class="rs-btn" type="button" data-close="rs-paste-dialog">Cancel</button><button class="rs-btn rs-btn-dark" type="submit">Add artwork</button></div></form></dialog>
+  <dialog id="rs-about-dialog" aria-labelledby="rs-about-heading"><div class="rs-card-head"><h2 id="rs-about-heading">A few useful details</h2><button class="rs-icon-btn" type="button" data-close="rs-about-dialog" aria-label="Close notes"><svg class="rs-icon" aria-hidden="true"><use href="#rs-close"/></svg></button></div><div class="rs-dialog-body"><p class="rs-label">Local from start to finish</p><p class="rs-help">No uploaded artwork, cookies, analytics, third-party scripts, or saved file history. Self-contained SVGs work offline. Loading linked assets contacts their hosts, without cookies or a referrer; those hosts can still see your IP address.</p><p class="rs-label" style="margin-top:18px">What renders best</p><p class="rs-help">Paths, gradients, embedded images, masks, filters, and internal styles are supported by your browser’s SVG renderer. Scripts, HTML foreignObject, animation, and unsupported active elements are removed and reported. SVGs that rely on website CSS must include those rules. Embedded fonts are retained, but font support and antialiasing vary by browser; outline text when exact typography matters.</p><p class="rs-label" style="margin-top:18px">Predictable exports</p><p class="rs-help">Trimming scans alpha at up to 2048 pixels, then renders the original vector again at each target size. Tiny or faint details may need trim turned off. Output dimensions stay exact; trimming changes the artwork framing. Up to 20 SVGs, 5 MiB each, 50 MiB total input, 4096 pixels per output side, and 128 MiB per ZIP. Heavy files are queued one at a time.</p><p class="rs-label" style="margin-top:18px">Platform bundles</p><p class="rs-help">Apple includes conventional iPhone/iPad and macOS raster AppIcon catalogs with opaque PNGs; it does not create layered Icon Composer appearances. Android includes legacy icons, transparent adaptive foregrounds, and XML resources. Web includes PNG favicons, a multi-size ICO, touch/PWA icons, a maskable icon, and manifest/HTML starter files. Review generated starter metadata before publishing.</p><p class="rs-help" id="rs-engine-note"></p><div class="rs-dialog-actions"><button class="rs-btn rs-btn-dark" type="button" data-close="rs-about-dialog">Got it</button></div></div></dialog>
+  <div class="rs-sr" id="rs-live" aria-live="polite" aria-atomic="true"></div>
+  <div class="rs-toast" id="rs-toast" role="status" hidden></div>
+</main>
+<script>
+(() => {
+  'use strict';
+  const ROOT = document.getElementById('svg-png-studio');
+  const $ = id => document.getElementById('rs-' + id);
+  const $$ = selector => [...ROOT.querySelectorAll(selector)];
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const LIMIT = Object.freeze({file:5*1024*1024, input:50*1024*1024, files:20, nodes:15000, side:4096, scan:2048, zip:128*1024*1024, asset:8*1024*1024, linked:24*1024*1024, resources:40, outputs:640, pixels:256*1024*1024});
+  const encoder = new TextEncoder();
+  const pause = () => new Promise(resolve => setTimeout(resolve, 0));
+  const sizeLabel = n => n < 1024 ? n+' B' : n < 1048576 ? (n/1024).toFixed(1)+' KB' : (n/1048576).toFixed(1)+' MB';
+  const errorText = e => e && e.message ? e.message : String(e);
+  const safeName = text => (String(text).normalize('NFKD').replace(/\.svg$/i,'').replace(/[^a-zA-Z0-9_-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,64) || 'artwork');
+  const json = value => JSON.stringify(value,null,2)+'\n';
+  const setText = (id,text) => { $(id).textContent=text; };
+  const live = text => { setText('live',text); };
+  let toastTimer;
+  function toast(text) { setText('toast',text); $('toast').hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(()=>{$('toast').hidden=true;},4500); }
+  function showError(text='') { setText('export-error',text); $('export-error').hidden=!text; }
+  const state={files:[],selected:null,busy:false,ingesting:false,preset:'web',padding:10,trim:true,background:'transparent',color:'#ffffff',custom:'64, 128, 256, 512, 1024',previewIndex:0,previewVersion:0,previewURL:null,result:null,job:0,ingestErrors:[]};
+
+  // Shared renderer and ZIP implementation. This function has no DOM dependencies
+  // and is serialized into the dedicated worker. Fallback uses the same math.
+  function createKernel() {
+    const isWorker=typeof document==='undefined';
+    const yieldTurn=()=>new Promise(r=>setTimeout(r,0));
+    function canvas(w,h,opaque=false) {
+      const c=isWorker ? new OffscreenCanvas(w,h) : Object.assign(document.createElement('canvas'),{width:w,height:h});
+      const ctx=c.getContext('2d',{alpha:!opaque,willReadFrequently:false});
+      if(!ctx) throw new Error('The browser could not allocate a canvas. Reduce the output size.');
+      return {c,ctx};
+    }
+    async function png(c) {
+      const b=c.convertToBlob ? await c.convertToBlob({type:'image/png'}) : await new Promise((resolve,reject)=>c.toBlob(b=>b ? resolve(b) : reject(new Error('PNG encoding failed. Try a smaller size.')),'image/png'));
+      if(!b || b.type!=='image/png') throw new Error('This browser did not return a valid PNG.');
+      return b;
+    }
+    async function bounds(img) {
+      const w=img.width,h=img.height,{c,ctx}=canvas(w,h);
+      try {
+        ctx.drawImage(img,0,0);
+        const rgba=ctx.getImageData(0,0,w,h).data;
+        let left=w,top=h,right=-1,bottom=-1;
+        for(let y=0;y<h;y++) {
+          for(let x=0;x<w;x++) if(rgba[(y*w+x)*4+3]>0) {left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=y;}
+          if(!isWorker && y%96===0) await yieldTurn();
+        }
+        if(right<left) return null;
+        return {x:left/w,y:top/h,w:(right-left+1)/w,h:(bottom-top+1)/h};
+      } finally { c.width=1;c.height=1; }
+    }
+    async function render(img,options) {
+      const {width,height,background,x,y,artWidth,artHeight}=options;
+      const {c,ctx}=canvas(width,height,Boolean(background));
+      try {
+        if(background){ctx.fillStyle=background;ctx.fillRect(0,0,width,height);}
+        ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+        ctx.drawImage(img,x,y,artWidth,artHeight);
+        return await png(c);
+      } finally {c.width=1;c.height=1;}
+    }
+    const crcTable=new Uint32Array(256);
+    for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;crcTable[n]=c>>>0;}
+    async function crc32(blob) {
+      let crc=0xffffffff;
+      for(let p=0;p<blob.size;p+=1048576) {
+        const data=new Uint8Array(await blob.slice(p,p+1048576).arrayBuffer());
+        for(let i=0;i<data.length;i++)crc=crcTable[(crc^data[i])&255]^(crc>>>8);
+        if(!isWorker)await yieldTurn();
+      }
+      return (crc^0xffffffff)>>>0;
+    }
+    class Zip {
+      constructor(){this.parts=[];this.entries=[];this.offset=0;this.paths=new Set();}
+      async add(name,blob) {
+        if(this.paths.has(name))throw new Error('Duplicate archive path: '+name);
+        if(!name || name.startsWith('/') || name.split('/').some(p=>p==='..'||!p))throw new Error('Invalid archive path.');
+        const bytes=new TextEncoder().encode(name),crc=await crc32(blob);
+        if(this.offset+blob.size+bytes.length+30>128*1024*1024)throw new Error('This ZIP exceeds 128 MB. Export fewer files or smaller sizes.');
+        const header=new Uint8Array(30+bytes.length),v=new DataView(header.buffer);
+        v.setUint32(0,0x04034b50,true);v.setUint16(4,20,true);v.setUint16(6,0x0800,true);
+        // Stored entries, UTF-8 paths, deterministic DOS date 1980-01-01.
+        v.setUint16(12,33,true);v.setUint32(14,crc,true);v.setUint32(18,blob.size,true);v.setUint32(22,blob.size,true);v.setUint16(26,bytes.length,true);header.set(bytes,30);
+        this.entries.push({bytes,crc,size:blob.size,offset:this.offset});
+        this.parts.push(header,blob);this.offset+=header.length+blob.size;this.paths.add(name);
+      }
+      finish() {
+        const start=this.offset;
+        for(const e of this.entries){
+          const h=new Uint8Array(46+e.bytes.length),v=new DataView(h.buffer);
+          v.setUint32(0,0x02014b50,true);v.setUint16(4,20,true);v.setUint16(6,20,true);v.setUint16(8,0x0800,true);v.setUint16(14,33,true);
+          v.setUint32(16,e.crc,true);v.setUint32(20,e.size,true);v.setUint32(24,e.size,true);v.setUint16(28,e.bytes.length,true);v.setUint32(42,e.offset,true);h.set(e.bytes,46);
+          this.parts.push(h);this.offset+=h.length;
+        }
+        const tail=new Uint8Array(22),v=new DataView(tail.buffer);
+        v.setUint32(0,0x06054b50,true);v.setUint16(8,this.entries.length,true);v.setUint16(10,this.entries.length,true);v.setUint32(12,this.offset-start,true);v.setUint32(16,start,true);
+        if(this.offset+22>128*1024*1024)throw new Error('This ZIP exceeds 128 MB.');
+        const blob=new Blob([...this.parts,tail],{type:'application/zip'});
+        this.parts=[];this.entries=[];this.paths.clear();return blob;
+      }
+    }
+    function ico(images) {
+      const h=new Uint8Array(6+16*images.length),v=new DataView(h.buffer);v.setUint16(2,1,true);v.setUint16(4,images.length,true);
+      let offset=h.length;
+      images.forEach(({width,blob},i)=>{const p=6+i*16;v.setUint8(p,width===256?0:width);v.setUint8(p+1,width===256?0:width);v.setUint16(p+4,1,true);v.setUint16(p+6,32,true);v.setUint32(p+8,blob.size,true);v.setUint32(p+12,offset,true);offset+=blob.size;});
+      return new Blob([h,...images.map(i=>i.blob)],{type:'image/x-icon'});
+    }
+    return {bounds,render,Zip,ico};
+  }
+  function workerMain() {
+    const kernel=createKernel();let zip=null;
+    self.onmessage=async ({data})=>{
+      const {id,method,payload}=data;
+      let img=payload?.bitmap;
+      try {
+        let result;
+        if(method==='init'){
+          const c=new OffscreenCanvas(2,2);c.getContext('2d').fillRect(0,0,1,1);await c.convertToBlob();
+          let direct=false;
+          try {const b=await createImageBitmap(new Blob(['<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2"/></svg>'],{type:'image/svg+xml'}));b.close();direct=true;}catch{}
+          result={direct};
+        } else if(method==='bounds'||method==='render') {
+          if(!img) img=await createImageBitmap(new Blob([payload.svg],{type:'image/svg+xml;charset=utf-8'}));
+          result=method==='bounds'?await kernel.bounds(img):await kernel.render(img,payload.options);
+        } else if(method==='zipReset'){zip=new kernel.Zip();result=true;}
+        else if(method==='zipAdd'){if(!zip)throw new Error('Archive is not initialized.');await zip.add(payload.name,payload.blob);result=true;}
+        else if(method==='zipFinish'){if(!zip)throw new Error('Archive is not initialized.');result=zip.finish();zip=null;}
+        else throw new Error('Unknown renderer operation.');
+        self.postMessage({id,result});
+      } catch(e){self.postMessage({id,error:e.message||String(e)});}
+      finally{if(img?.close)img.close();}
+    };
+  }
+  class Engine {
+    constructor(){this.worker=null;this.direct=false;this.pending=new Map();this.id=0;this.kernel=createKernel();this.zip=null;this.mode='compatibility';}
+    async init() {
+      if(!window.Worker||!window.OffscreenCanvas||!window.createImageBitmap)return this;
+      let url;
+      try {
+        url=URL.createObjectURL(new Blob(['"use strict";const createKernel=',createKernel.toString(),';(',workerMain.toString(),')();'],{type:'text/javascript'}));
+        this.worker=new Worker(url);
+        this.worker.onmessage=({data})=>{const p=this.pending.get(data.id);if(!p)return;this.pending.delete(data.id);clearTimeout(p.timer);data.error?p.reject(new Error(data.error)):p.resolve(data.result);};
+        this.worker.onerror=e=>{e.preventDefault();this.stop(new Error('The background renderer stopped. Try fewer files or smaller sizes.'));};
+        const result=await this.call('init',{},[],7000);this.direct=result.direct;this.mode=result.direct?'worker':'hybrid';
+      }catch{this.stop();this.mode='compatibility';}
+      finally{if(url)URL.revokeObjectURL(url);}
+      return this;
+    }
+    call(method,payload={},transfer=[],timeout=60000) {
+      return new Promise((resolve,reject)=>{
+        if(!this.worker){reject(new Error('Background renderer is unavailable.'));return;}
+        const id=++this.id;
+        const timer=setTimeout(()=>{this.stop(new Error('Rendering timed out. Simplify the SVG or reduce its size.'));},timeout);
+        this.pending.set(id,{resolve,reject,timer});
+        try{this.worker.postMessage({id,method,payload},transfer);}catch(e){this.pending.delete(id);clearTimeout(timer);reject(e);}
+      });
+    }
+    stop(error=new DOMException('Operation cancelled','AbortError')) {
+      this.worker?.terminate();this.worker=null;this.zip=null;
+      for(const p of this.pending.values()){clearTimeout(p.timer);p.reject(error);}this.pending.clear();
+    }
+    async image(svg) {
+      const img=new Image();const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
+      try {
+        await new Promise((resolve,reject)=>{const timer=setTimeout(()=>{img.src='';reject(new Error('SVG decoding timed out. Simplify this artwork.'));},20000);img.onload=()=>{clearTimeout(timer);resolve();};img.onerror=()=>{clearTimeout(timer);reject(new Error('The browser could not render this SVG. Check its markup and embedded assets.'));};img.src=url;});
+        return img;
+      } finally {URL.revokeObjectURL(url);}
+    }
+    async raster(method,svg,options) {
+      if(this.worker&&this.direct){try{return await this.call(method,{svg,options});}catch(e){if(!this.worker)throw e;this.direct=false;}}
+      const img=await this.image(svg);
+      if(this.worker){
+        let bitmap;
+        try{bitmap=await createImageBitmap(img);}catch{ /* Browser cannot transfer SVG-backed images; use cooperative fallback. */ }
+        if(bitmap){try{return await this.call(method,{bitmap,options},[bitmap]);}finally{bitmap.close();}}
+      }
+      await pause();
+      return method==='bounds'?this.kernel.bounds(img):this.kernel.render(img,options);
+    }
+    async zipReset(){if(this.worker)await this.call('zipReset');else this.zip=new this.kernel.Zip();}
+    async zipAdd(name,blob){if(this.worker)await this.call('zipAdd',{name,blob});else {if(!this.zip)throw new Error('Archive cancelled.');await this.zip.add(name,blob);}}
+    async zipFinish(){if(this.worker)return this.call('zipFinish');const b=this.zip.finish();this.zip=null;return b;}
+  }
+  let engine;
+  const engineReady=new Engine().init().then(value=>{engine=value;setText('engine-note',value.mode==='worker'?'Renderer: SVG decoding and PNG processing in a background worker.':value.mode==='hybrid'?'Renderer: native SVG image decoding with background PNG processing.':'Renderer: compatible canvas mode. Large or complex SVGs may take longer.');return value;});
+
+  // Presets describe pixels and packaging, independently from UI and rendering.
+  const presetHelp={web:'7 PNGs, a multi-size favicon, and manifest + HTML starter files.',apple:'23 PNGs with iOS/iPadOS and macOS asset catalogs. Conventional raster icons; all outputs are opaque.',android:'11 PNGs: five legacy densities, five adaptive foregrounds, and a Play Store icon. XML resources included.',custom:'Exact sizes with consistent framing, plus an export manifest.'};
+  const iosSlots=[['iphone',20,[2,3]],['iphone',29,[2,3]],['iphone',40,[2,3]],['iphone',60,[2,3]],['ipad',20,[1,2]],['ipad',29,[1,2]],['ipad',40,[1,2]],['ipad',76,[1,2]],['ipad',83.5,[2]],['ios-marketing',1024,[1]]];
+  function customSizes(raw) {
+    const pieces=raw.trim().split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean);
+    if(!pieces.length)throw new Error('Enter at least one size, such as 512 or 1200x630.');
+    if(pieces.length>32)throw new Error('Use up to 32 sizes per SVG.');
+    const seen=new Set(),out=[];
+    for(const part of pieces){const m=/^(\d+)\s*(?:[x×]\s*(\d+))?$/i.exec(part);if(!m)throw new Error('“'+part+'” is not a size. Use 512 or 1200x630.');const w=Number(m[1]),h=Number(m[2]||m[1]);if(w<1||h<1||w>LIMIT.side||h>LIMIT.side)throw new Error('Each side must be between 1 and 4096 pixels.');const key=w+'x'+h;if(!seen.has(key)){seen.add(key);out.push({width:w,height:h,name:'png/icon-'+key+'.png',purpose:'Custom PNG'});}}
+    return out;
+  }
+  function getPlan() {
+    const p=state.preset;
+    if(p==='custom')return customSizes(state.custom);
+    if(p==='web')return [
+      {width:512,name:'web/icon-512.png',purpose:'PWA icon'},
+      {width:192,name:'web/icon-192.png',purpose:'PWA icon'},
+      {width:180,name:'web/apple-touch-icon.png',purpose:'Apple touch icon',opaque:true},
+      ...[16,32,48].map(width=>({width,name:'web/favicon-'+width+'.png',purpose:'Favicon',ico:true})),
+      {width:512,name:'web/icon-maskable-512.png',purpose:'Maskable · safe circle',opaque:true,safe:.8}
+    ].map(t=>({...t,height:t.width}));
+    if(p==='apple'){
+      const out=[],seen=new Set();
+      for(const [,points,scales] of iosSlots)for(const scale of scales){const width=Math.round(points*scale);if(!seen.has(width)){seen.add(width);out.push({width,height:width,name:'apple/ios/AppIcon.appiconset/icon-'+width+'.png',purpose:width===1024?'App Store':'iPhone / iPad',opaque:true});}}
+      for(const points of [16,32,128,256,512])for(const scale of [1,2]){const width=points*scale;out.push({width,height:width,name:'apple/macos/AppIcon.appiconset/icon_'+points+'x'+points+(scale===2?'@2x':'')+'.png',purpose:'macOS · '+scale+'×',opaque:true});}
+      return out;
+    }
+    const out=[];
+    for(const [density,scale] of [['mdpi',1],['hdpi',1.5],['xhdpi',2],['xxhdpi',3],['xxxhdpi',4]]){
+      out.push({width:48*scale,height:48*scale,name:'android/res/mipmap-'+density+'/ic_launcher.png',purpose:'Legacy · '+density});
+      out.push({width:108*scale,height:108*scale,name:'android/res/mipmap-'+density+'/ic_launcher_foreground.png',purpose:'Adaptive · '+density,safe:66/108,transparent:true});
+    }
+    out.push({width:512,height:512,name:'android/play-store-icon.png',purpose:'Google Play',opaque:true});return out;
+  }
+  function packageExtras(file,plan,options) {
+    const files=[];const add=(name,text,type='text/plain')=>files.push({name,blob:new Blob([text],{type})});
+    if(options.preset==='web'){
+      add('web/site.webmanifest',json({name:file.base,short_name:file.base.slice(0,12),id:'./',start_url:'./',scope:'./',display:'standalone',background_color:options.color,theme_color:options.color,icons:[{src:'icon-192.png',sizes:'192x192',type:'image/png',purpose:'any'},{src:'icon-512.png',sizes:'512x512',type:'image/png',purpose:'any'},{src:'icon-maskable-512.png',sizes:'512x512',type:'image/png',purpose:'maskable'}]}),'application/manifest+json');
+      add('web/head-snippet.html','<!-- Place these files next to your page, or adjust all paths. -->\n<link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">\n<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">\n<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">\n<link rel="manifest" href="site.webmanifest">\n<meta name="theme-color" content="'+options.color+'">\n','text/html');
+    }
+    if(options.preset==='apple'){
+      const ios=[];for(const [idiom,points,scales] of iosSlots)for(const scale of scales)ios.push({idiom,size:points+'x'+points,scale:scale+'x',filename:'icon-'+Math.round(points*scale)+'.png'});
+      const mac=[];for(const points of [16,32,128,256,512])for(const scale of [1,2])mac.push({idiom:'mac',size:points+'x'+points,scale:scale+'x',filename:'icon_'+points+'x'+points+(scale===2?'@2x':'')+'.png'});
+      add('apple/ios/AppIcon.appiconset/Contents.json',json({images:ios,info:{version:1,author:'xcode'}}),'application/json');
+      add('apple/macos/AppIcon.appiconset/Contents.json',json({images:mac,info:{version:1,author:'xcode'}}),'application/json');
+    }
+    if(options.preset==='android'){
+      add('android/res/mipmap-anydpi-v26/ic_launcher.xml','<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n    <background android:drawable="@color/ic_launcher_background" />\n    <foreground android:drawable="@mipmap/ic_launcher_foreground" />\n</adaptive-icon>\n','application/xml');
+      add('android/res/values/ic_launcher_colors.xml','<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">'+options.color+'</color>\n</resources>\n','application/xml');
+    }
+    add('export-manifest.json',json({generator:'SVG to PNG Studio 1.0.0',source:file.name,preset:options.preset,paddingPerSide:options.padding/100,autoTrim:options.trim,background:options.background,color:options.color,trimScanMaxPixels:LIMIT.scan,outputs:plan.map(p=>({path:p.name,width:p.width,height:p.height,background:p.transparent?'transparent':p.opaque||options.background==='solid'?options.color:'transparent',safeCircleDiameter:p.safe||null})),notes:file.warnings}),'application/json');
+    const specific=options.preset==='web'?'WEB\nCopy web/ to your public asset directory. Adjust the paths in head-snippet.html, and edit site.webmanifest name, id, start_url, scope, colors, and paths for your app. A manifest alone does not add offline behavior. The maskable PNG fits the artwork inside the central safe circle. favicon.ico contains PNG-backed 16, 32, and 48px images for modern clients.\n':options.preset==='apple'?'APPLE\nImport the relevant AppIcon.appiconset into your iOS or macOS Assets.xcassets catalog. Select AppIcon in the target settings. These are traditional raster assets with light/default artwork, not layered Icon Composer appearances, watchOS, tvOS, or visionOS assets. All PNGs are flattened to the chosen background. Xcode/App Store validation remains part of your app release process.\n':options.preset==='android'?'ANDROID\nMerge android/res/ into app/src/main/res/. Resolve existing resource-name conflicts before replacing files. Set android:icon="@mipmap/ic_launcher" on your application in AndroidManifest.xml. Adaptive foreground layers have a conservative 66dp safe circle within a 108dp canvas; the background comes from ic_launcher_colors.xml. Android selects the v26 adaptive resource where supported, and the legacy PNG on older versions. Monochrome themed icons require separately designed artwork and are not generated. play-store-icon.png is the 512px store asset.\n':'CUSTOM\nFiles in png/ have the exact requested dimensions, with artwork centered and contained without stretching.\n';
+    add('README.txt','SVG TO PNG STUDIO\n\n'+specific+'\nRENDERING\nEvery output is rasterized from the original vector at its target size. Trimming is estimated from an alpha scan up to 2048px; tiny details may be missed. Browser font rendering can vary. Use outlined text for portable typography. Review every final icon, especially small favicons, before release. PNG compression is lossless; embedded raster images cannot gain vector detail.\n\nSOURCE NOTES\n'+(file.warnings.length?file.warnings.map(w=>'- '+w).join('\n'):'No preprocessing warnings.')+'\n');
+    return files;
+  }
+
+  const allowedTags=new Set(('svg g defs symbol use title desc metadata a switch path rect circle ellipse line polyline polygon text tspan textPath style linearGradient radialGradient stop pattern marker clipPath mask image filter feBlend feColorMatrix feComponentTransfer feComposite feConvolveMatrix feDiffuseLighting feDisplacementMap feDistantLight feDropShadow feFlood feFuncA feFuncB feFuncG feFuncR feGaussianBlur feImage feMerge feMergeNode feMorphology feOffset fePointLight feSpecularLighting feSpotLight feTile feTurbulence').split(' '));
+  const cssUnescape=s=>s.replace(/\\([0-9a-fA-F]{1,6})(?:\r\n|\s)?|\\([^\r\n])/g,(_,hex,char)=>hex?String.fromCodePoint(Math.max(1,Math.min(parseInt(hex,16),0x10ffff))):char);
+  async function replaceAsync(text,pattern,fn) {let out='',last=0;for(const match of text.matchAll(pattern)){out+=text.slice(last,match.index)+await fn(match);last=match.index+match[0].length;}return out+text.slice(last);}
+  function dataURI(blob) {return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('Could not embed this linked asset.'));reader.readAsDataURL(blob);});}
+  function absoluteURL(raw,base) {
+    let url;try{url=base?new URL(raw,base):new URL(raw);}catch{throw new Error('Relative linked asset “'+raw.slice(0,100)+'” has no source URL. Embed it in the SVG or use an absolute HTTPS URL.');}
+    if(url.protocol!=='https:'||url.username||url.password)throw new Error('Linked assets must use HTTPS without credentials: '+url.hostname);
+    if(!url.hostname.includes('.')||/[\[\]:]/.test(url.hostname)||/^\d+(\.\d+){3}$/.test(url.hostname)||/(^|\.)(localhost|local|internal|test|invalid)$/.test(url.hostname))throw new Error('Local or private-address linked assets are not supported. Embed the asset in the SVG.');
+    return url.href;
+  }
+  function createResolver(signal) {
+    let total=0;const cache=new Map();
+    return async (url,kind)=>{
+      const key=kind+':'+url;if(cache.has(key))return cache.get(key);
+      if(cache.size>=LIMIT.resources)throw new Error('Too many linked resources. Embed assets before exporting.');
+      const task=(async()=>{
+        const abort=new AbortController();const parentAbort=()=>abort.abort();signal?.addEventListener('abort',parentAbort,{once:true});if(signal?.aborted)abort.abort();
+        const timer=setTimeout(()=>abort.abort(),12000);
+        try{
+          const response=await fetch(url,{mode:'cors',credentials:'omit',referrerPolicy:'no-referrer',redirect:'error',cache:'no-store',signal:abort.signal});
+          if(!response.ok)throw new Error('HTTP '+response.status);
+          const mime=(response.headers.get('content-type')||'').split(';')[0].trim().toLowerCase();
+          if(kind==='css'&&mime!=='text/css')throw new Error('Linked stylesheet must be served as text/css.');
+          if(kind==='image'&&!/^image\/(png|jpeg|webp|gif|svg\+xml)$/.test(mime))throw new Error('Linked image must be PNG, JPEG, WebP, GIF, or SVG.');
+          if(kind==='font'&&!/^(font\/|application\/(font-|x-font-|vnd.ms-fontobject|octet-stream))/.test(mime))throw new Error('Linked font has an unsupported content type.');
+          if(Number(response.headers.get('content-length'))>LIMIT.asset)throw new Error('Linked asset exceeds 8 MB.');
+          const chunks=[];let size=0;
+          if(!response.body)throw new Error('This browser cannot stream linked assets. Embed them in the SVG.');
+          const reader=response.body.getReader();
+          try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;total+=value.length;if(size>LIMIT.asset||total>LIMIT.linked){await reader.cancel();throw new Error('Linked assets exceed the download limit (8 MB each, 24 MB total).');}chunks.push(value);}}finally{reader.releaseLock();}
+          return new Blob(chunks,{type:mime});
+        }catch(e){if(signal?.aborted)throw new DOMException('Cancelled','AbortError');throw new Error('Could not load '+new URL(url).hostname+': '+errorText(e)+' The host must allow CORS; redirects and authenticated resources are unsupported.');}
+        finally{clearTimeout(timer);signal?.removeEventListener('abort',parentAbort);}
+      })();cache.set(key,task);return task;
+    };
+  }
+  async function processCSS(text,ctx,base=null,depth=0,chain=new Set()) {
+    if(depth>4)throw new Error('Linked CSS imports are nested too deeply.');
+    let css=cssUnescape(text.replace(/\/\*[\s\S]*?\*\//g,''));
+    if(/expression\s*\(|(?:-webkit-)?image-set\s*\(|-moz-binding\s*:|behavior\s*:|@namespace\b/i.test(css))throw new Error('This SVG uses unsupported CSS. Replace dynamic CSS with SVG shapes or ordinary styles.');
+    css=css.replace(/@charset\s+[^;]*;/gi,'');
+    const importPattern=/@import\s+(?:url\(\s*(?:"([^"]*)"|'([^']*)'|([^)]*))\s*\)|"([^"]*)"|'([^']*)')\s*([^;]*);/gi;
+    css=await replaceAsync(css,importPattern,async m=>{
+      const raw=(m[1]??m[2]??m[3]??m[4]??m[5]).trim(),url=absoluteURL(raw,base),media=m[6].trim();
+      ctx.deps.add(url);
+      if(!ctx.resolve)return '';
+      if(chain.has(url))throw new Error('Circular stylesheet import detected.');
+      if(media&&/\b(layer|supports)\s*\(/i.test(media))throw new Error('CSS imports using layer() or supports() must be embedded before export.');
+      const blob=await ctx.resolve(url,'css');const next=new Set(chain);next.add(url);
+      const imported=await processCSS(await blob.text(),ctx,url,depth+1,next);
+      return media?'@media '+media+'{'+imported+'}':imported;
+    });
+    if(/@import\b/i.test(css))throw new Error('An SVG stylesheet has an unsupported @import. Embed that stylesheet first.');
+    const urlPattern=/url\(\s*(?:"([^"]*)"|'([^']*)'|([^)]*))\s*\)/gi;
+    css=await replaceAsync(css,urlPattern,async m=>{
+      const raw=(m[1]??m[2]??m[3]).trim();
+      // src inside @font-face is the only non-image binary dependency.
+      const before=css.slice(0,m.index),open=before.lastIndexOf('{'),isFont=/@font-face\s*$/i.test(before.slice(0,open));
+      const mapped=await resourceURL(raw,isFont?'font':'image',ctx,base,depth);
+      return 'url('+JSON.stringify(mapped)+')';
+    });
+    return css;
+  }
+  async function resourceURL(raw,kind,ctx,base=null,depth=0) {
+    raw=raw.trim();if(!raw)return '';
+    if(raw.startsWith('#'))return raw;
+    if(/^data:/i.test(raw)){
+      if(kind==='font'){
+        if(!/^data:(?:font\/[a-z0-9-]+|application\/(?:font-[a-z0-9-]+|x-font-[a-z0-9-]+|vnd.ms-fontobject|octet-stream))(?:;[^,]*)?,/i.test(raw))throw new Error('Unsupported embedded font format. Use WOFF, WOFF2, TTF, or OTF.');
+        return raw;
+      }
+      if(/^data:image\/svg\+xml[;,]/i.test(raw)){
+        if(depth>3)throw new Error('Nested SVG images are too deep.');
+        const comma=raw.indexOf(',');let text;
+        try{text=/;base64/i.test(raw.slice(0,comma))?new TextDecoder().decode(Uint8Array.from(atob(raw.slice(comma+1)),c=>c.charCodeAt(0))):decodeURIComponent(raw.slice(comma+1));}catch{throw new Error('An embedded SVG image has invalid encoding.');}
+        const nested=await sanitizeSVG(text,ctx,depth+1,base);
+        return dataURI(new Blob([new XMLSerializer().serializeToString(nested.root)],{type:'image/svg+xml'}));
+      }
+      if(!/^data:image\/(png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(raw))throw new Error('Unsupported embedded image. Use PNG, JPEG, WebP, GIF, or a self-contained SVG.');
+      ctx.warnings.add('Embedded bitmap images retain their original detail when enlarged.');return raw;
+    }
+    const url=absoluteURL(raw,base);ctx.deps.add(url);if(!ctx.resolve)return '';
+    const blob=await ctx.resolve(url,kind);
+    if(blob.type==='image/svg+xml'){
+      if(depth>3)throw new Error('Nested SVG images are too deep.');
+      const nested=await sanitizeSVG(await blob.text(),ctx,depth+1,url);
+      return dataURI(new Blob([new XMLSerializer().serializeToString(nested.root)],{type:'image/svg+xml'}));
+    }
+    if(kind==='image')ctx.warnings.add('Embedded bitmap images retain their original detail when enlarged.');
+    return dataURI(blob);
+  }
+  function parseLength(raw) {
+    if(!raw)return null;const m=/^\s*(\d+(?:\.\d+)?|\.\d+)\s*(px|pt|pc|in|cm|mm|q)?\s*$/i.exec(raw);
+    if(!m)return null;return Number(m[1])*({px:1,pt:96/72,pc:16,in:96,cm:96/2.54,mm:96/25.4,q:96/101.6}[(m[2]||'px').toLowerCase()]);
+  }
+  async function sanitizeSVG(text,shared=null,depth=0,base=null) {
+    if(/<!ENTITY\b|<!DOCTYPE[^>]*\[/i.test(text))throw new Error('SVG entity declarations are unsupported. Save a plain SVG without a DTD subset.');
+    const doc=new DOMParser().parseFromString(text,'image/svg+xml');
+    if(doc.querySelector('parsererror'))throw new Error('This SVG has invalid XML. Check closing tags, namespaces, and escaped characters.');
+    const original=doc.documentElement;
+    if(original.localName!=='svg'||(original.namespaceURI&&original.namespaceURI!==SVG_NS))throw new Error('The file must contain an SVG root element.');
+    const ctx=shared||{deps:new Set(),warnings:new Set(),resolve:null,nodes:0};
+    ctx.nodes=ctx.nodes||0;
+    const cleaned=document.implementation.createDocument(SVG_NS,'svg',null),root=cleaned.documentElement;
+    async function copy(from,to,level=0) {
+      if(level>128)throw new Error('This SVG has too many nested groups. Flatten its group structure first.');
+      ctx.nodes++;if(ctx.nodes>LIMIT.nodes)throw new Error('This artwork has too many elements. Simplify it to fewer than 15,000 SVG elements.');
+      for(const attr of from.attributes){
+        const key=attr.localName.toLowerCase();
+        if(key.startsWith('on')||['base','src','srcset','tabindex','autofocus','contenteditable'].includes(key)||attr.name==='xmlns'||attr.name.startsWith('xmlns:')){if(key.startsWith('on'))ctx.warnings.add('Event handlers were removed.');continue;}
+        if(attr.namespaceURI&&![SVG_NS,'http://www.w3.org/1999/xlink','http://www.w3.org/XML/1998/namespace'].includes(attr.namespaceURI))continue;
+        let value=attr.value;
+        if(key==='href'){
+          if(from.localName==='a')continue;
+          if(!['image','feImage'].includes(from.localName)){
+            if(!value.trim().startsWith('#')){ctx.warnings.add('An external SVG reference was removed. Convert linked symbols to local paths.');continue;}
+          }else value=await resourceURL(value,'image',ctx,base,depth);
+        }
+        if(key==='style'||/url\s*\(|\\/i.test(value))value=await processCSS(value,ctx,base,depth);
+        if(attr.namespaceURI==='http://www.w3.org/1999/xlink')to.setAttributeNS(attr.namespaceURI,'xlink:'+attr.localName,value);
+        else if(attr.namespaceURI==='http://www.w3.org/XML/1998/namespace')to.setAttributeNS(attr.namespaceURI,'xml:'+attr.localName,value);
+        else to.setAttribute(attr.name,value);
+      }
+      if(from.localName==='style'){to.textContent=await processCSS(from.textContent,ctx,base,depth);return;}
+      if(from.localName==='text')ctx.warnings.add('Text uses browser font rendering. Convert it to paths for consistent typography across devices.');
+      for(const child of from.childNodes){
+        if(child.nodeType===3||child.nodeType===4){to.appendChild(cleaned.createTextNode(child.textContent));continue;}
+        if(child.nodeType!==1)continue;
+        if(!allowedTags.has(child.localName)||(child.namespaceURI&&child.namespaceURI!==SVG_NS)){
+          if(child.localName==='link'&&/stylesheet/i.test(child.getAttribute('rel')||'')){
+            const href=child.getAttribute('href');if(href){const url=absoluteURL(href,base);ctx.deps.add(url);if(ctx.resolve){const style=cleaned.createElementNS(SVG_NS,'style');style.textContent=await processCSS(await (await ctx.resolve(url,'css')).text(),ctx,url,depth+1,new Set([url]));to.appendChild(style);}}
+          }else ctx.warnings.add('Removed unsupported <'+child.localName+'> content'+(/animate|set/i.test(child.localName)?'; artwork is exported as a still image.':'.'));
+          continue;
+        }
+        const el=cleaned.createElementNS(SVG_NS,child.localName);await copy(child,el,level+1);to.appendChild(el);
+        if(ctx.nodes%250===0)await pause();
+      }
+    }
+    await copy(original,root);
+    let vb=null;const rawVB=root.getAttribute('viewBox');
+    if(rawVB!==null){vb=rawVB.trim().split(/[\s,]+/).map(Number);if(vb.length!==4||vb.some(n=>!Number.isFinite(n))||vb[2]<=0||vb[3]<=0)throw new Error('The SVG viewBox must contain four numbers with a positive width and height.');}
+    const originalWidth=parseLength(root.getAttribute('width')),originalHeight=parseLength(root.getAttribute('height'));
+    if(!vb){if(!(originalWidth>0&&originalHeight>0))throw new Error('Add a viewBox, or positive width and height values, so this SVG has a defined aspect ratio.');vb=[0,0,originalWidth,originalHeight];root.setAttribute('viewBox',vb.join(' '));}
+    if(vb.some(n=>Math.abs(n)>1e9)||vb[2]/vb[3]>10000||vb[3]/vb[2]>10000)throw new Error('This SVG has extreme coordinates or proportions. Simplify its viewBox first.');
+    const width=vb[2],height=vb[3];
+    root.setAttribute('width',String(width));root.setAttribute('height',String(height));root.setAttribute('x','0');root.setAttribute('y','0');
+    root.style.setProperty('width',width+'px','important');root.style.setProperty('height',height+'px','important');
+    root.style.setProperty('min-width','0','important');root.style.setProperty('min-height','0','important');root.style.setProperty('max-width','none','important');root.style.setProperty('max-height','none','important');root.style.setProperty('overflow','hidden','important');
+    if(root.querySelector('[style*="animation"], [style*="transition"]')||[...root.querySelectorAll('style')].some(s=>/@keyframes|animation\s*:/i.test(s.textContent)))ctx.warnings.add('CSS animation is frozen for still-image export.');
+    const freeze=cleaned.createElementNS(SVG_NS,'style');freeze.textContent='* { animation: none !important; transition: none !important; }';root.appendChild(freeze);
+    // Processing instructions (including xml-stylesheet) are intentionally not copied.
+    if(/<\?xml-stylesheet/i.test(text))ctx.warnings.add('An xml-stylesheet instruction was removed. Embed those CSS rules inside the SVG.');
+    return {root,width,height,deps:[...ctx.deps],warnings:[...ctx.warnings]};
+  }
+  function vectorAt(file,width,height,crop={x:0,y:0,w:1,h:1}) {
+    const outer=document.implementation.createDocument(SVG_NS,'svg',null),svg=outer.documentElement;
+    svg.setAttribute('width',String(width));svg.setAttribute('height',String(height));
+    svg.setAttribute('style','all:initial !important;display:block !important;width:'+width+'px !important;height:'+height+'px !important;overflow:hidden !important;');
+    svg.setAttribute('viewBox',[crop.x*file.width,crop.y*file.height,crop.w*file.width,crop.h*file.height].join(' '));svg.setAttribute('preserveAspectRatio','none');
+    svg.appendChild(outer.importNode(file.root,true));
+    return new XMLSerializer().serializeToString(svg);
+  }
+  async function analyze(file,renderEngine) {
+    const factor=Math.min(1,LIMIT.scan/Math.max(file.width,file.height));
+    // At least a 1024px sampling extent for small viewBoxes, up to 2048px.
+    const scale=Math.max(factor,Math.min(1024/Math.max(file.width,file.height),LIMIT.scan/Math.max(file.width,file.height)));
+    const width=Math.max(1,Math.round(file.width*scale)),height=Math.max(1,Math.round(file.height*scale));
+    file.bounds=await renderEngine.raster('bounds',vectorAt(file,width,height));
+    if(!file.bounds)file.warnings.push('No visible pixels were found in the trim scan. Turn trimming off to export this artwork as-is.');
+  }
+  function layout(file,target,options,scale=1) {
+    const width=Math.max(1,Math.round(target.width*scale)),height=Math.max(1,Math.round(target.height*scale));
+    const crop=options.trim&&file.bounds?file.bounds:{x:0,y:0,w:1,h:1};
+    const sw=crop.w*file.width,sh=crop.h*file.height;
+    const available=1-2*options.padding/100;
+    let fit=Math.min(width*available/sw,height*available/sh);
+    if(target.safe)fit=Math.min(fit,Math.min(width,height)*target.safe*available/Math.hypot(sw,sh));
+    const artWidth=Math.max(1,Math.floor(sw*fit)),artHeight=Math.max(1,Math.floor(sh*fit));
+    return {width,height,artWidth,artHeight,x:Math.floor((width-artWidth)/2),y:Math.floor((height-artHeight)/2),background:target.transparent?null:target.opaque||options.background==='solid'?options.color:null,crop};
+  }
+  async function renderOutput(file,target,options,renderEngine,scale=1) {
+    const geometry=layout(file,target,options,scale);
+    return renderEngine.raster('render',vectorAt(file,geometry.artWidth,geometry.artHeight,geometry.crop),geometry);
+  }
+  function snapshot(){return {preset:state.preset,padding:state.padding,trim:state.trim,background:state.background,color:state.color};}
+  function node(tag,className,text) {const el=document.createElement(tag);if(className)el.className=className;if(text!==undefined)el.textContent=text;return el;}
+  function glyph(name) {const svg=document.createElementNS(SVG_NS,'svg'),use=document.createElementNS(SVG_NS,'use');svg.setAttribute('class','rs-icon');svg.setAttribute('aria-hidden','true');use.setAttribute('href','#rs-'+name);svg.appendChild(use);return svg;}
+  const downloadURLs=new Set();
+  function download(blob,name) {
+    const url=URL.createObjectURL(blob);downloadURLs.add(url);const a=node('a');a.href=url;a.download=name;a.style.display='none';ROOT.appendChild(a);a.click();a.remove();
+    setTimeout(()=>{URL.revokeObjectURL(url);downloadURLs.delete(url);},60000);
+  }
+  function releaseResult(){state.result=null;$('result').hidden=true;}
+  function releaseFile(file){if(file.thumb)URL.revokeObjectURL(file.thumb);file.root=null;file.raw='';}
+  function selectedFile(){return state.files.find(f=>f.id===state.selected&&f.status==='ready');}
+  function drawFiles() {
+    $('files').replaceChildren();
+    for(const file of state.files){
+      const li=node('li','rs-file'+(file.id===state.selected?' rs-selected':''));
+      const pick=node('button','rs-file-pick');pick.type='button';pick.setAttribute('aria-label','Preview '+file.name);pick.setAttribute('aria-pressed',String(file.id===state.selected));pick.disabled=state.busy||state.ingesting||file.status!=='ready';
+      if(file.thumb){const img=node('img','rs-thumb');img.src=file.thumb;img.alt='';pick.appendChild(img);}else{const span=node('span','rs-thumb');span.appendChild(glyph('file'));pick.appendChild(span);}
+      const meta=node('span','rs-file-meta');meta.appendChild(node('span','rs-file-name',file.name));
+      meta.appendChild(node('span','rs-file-info',file.status==='ready'?file.width+' × '+file.height+' viewBox · '+sizeLabel(file.size):file.status==='linked'?'Linked assets need permission':file.status==='error'?'Could not render · remove or retry':'Preparing…'));pick.appendChild(meta);
+      pick.addEventListener('click',()=>{state.selected=file.id;drawFiles();schedulePreview();});
+      const remove=node('button','rs-icon-btn');remove.type='button';remove.disabled=state.busy||state.ingesting;remove.setAttribute('aria-label','Remove '+file.name);remove.appendChild(glyph('close'));
+      remove.addEventListener('click',()=>{releaseFile(file);state.files=state.files.filter(f=>f.id!==file.id);if(state.selected===file.id)state.selected=state.files.find(f=>f.status==='ready')?.id||null;releaseResult();refresh();schedulePreview();});
+      li.append(pick,remove);$('files').appendChild(li);
+    }
+    setText('source-count',state.files.length?state.files.length+' / 20 SVG files':'SVG files · up to 5 MB each');
+    setText('drop-title',state.files.length?'Add more SVG artwork':'Drop your SVG files here');
+    $('clear').hidden=!state.files.length;$('sample').hidden=Boolean(state.files.length);
+    setText('upload-note',state.files.length?'Select a file to preview it.':'Just exploring?');
+  }
+  function drawAlerts() {
+    const alerts=$('alerts');alerts.replaceChildren();
+    const errors=[...state.ingestErrors,...state.files.filter(f=>f.error).map(f=>f.name+': '+f.error)];
+    const linked=state.files.filter(f=>f.status==='linked');
+    if(errors.length){alerts.appendChild(node('h3','','Some artwork needs attention'));const list=node('ul');for(const message of errors)list.appendChild(node('li','',message));alerts.appendChild(list);}
+    if(linked.length){
+      alerts.appendChild(node('h3','','This artwork uses linked assets'));
+      alerts.appendChild(node('p','','Loading them contacts the hosts below, plus assets referenced by their stylesheets. Your SVG is not uploaded. The hosts can see your IP address.'));
+      const deps=[...new Set(linked.flatMap(f=>f.deps))],list=node('ul');for(const url of deps)list.appendChild(node('li','',url));alerts.appendChild(list);
+      const button=node('button','rs-btn','Load linked assets');button.type='button';button.disabled=state.ingesting||state.busy;button.addEventListener('click',loadLinked);alerts.appendChild(button);
+    }
+    const warnings=[...new Set(state.files.flatMap(f=>f.warnings||[]))];
+    if(warnings.length){const details=node('details');details.style.marginTop='8px';details.appendChild(node('summary','',warnings.length+' rendering note'+(warnings.length===1?'':'s')));const list=node('ul');warnings.forEach(w=>list.appendChild(node('li','',w)));details.appendChild(list);alerts.appendChild(details);}
+    alerts.hidden=!errors.length&&!linked.length&&!warnings.length;
+  }
+  function updatePlan() {
+    let plan=[],error='';try{plan=getPlan();}catch(e){error=errorText(e);}
+    setText('custom-error',error);$('custom-error').hidden=!error;$('custom-sizes').setAttribute('aria-invalid',String(Boolean(error)));
+    $('plan-rows').replaceChildren();
+    for(const p of plan){const tr=node('tr');for(const value of [p.name,p.width+' × '+p.height,p.purpose])tr.appendChild(node('td','',value));$('plan-rows').appendChild(tr);}
+    const extra=state.preset==='web'?['web/favicon.ico','web/site.webmanifest','web/head-snippet.html']:state.preset==='apple'?['apple/ios/AppIcon.appiconset/Contents.json','apple/macos/AppIcon.appiconset/Contents.json']:state.preset==='android'?['android/res/mipmap-anydpi-v26/ic_launcher.xml','android/res/values/ic_launcher_colors.xml']:[];
+    for(const path of [...extra,'export-manifest.json','README.txt']){const tr=node('tr');for(const value of [path,'—',path.endsWith('.ico')?'Multi-size favicon':'Supporting file'])tr.appendChild(node('td','',value));$('plan-rows').appendChild(tr);}
+    const count=plan.length*Math.max(state.files.length,1);
+    setText('total',count+' PNG'+(count===1?'':'s')+(state.files.length?'':' per SVG'));
+    setText('plan-count',plan.length+' PNGs + '+(extra.length+2)+' supporting files per SVG');
+    setText('plan-note','Each artwork gets a separate folder. Exact output dimensions are preserved; trimming adjusts the artwork inside them.');
+    setText('preset-help',state.preset==='apple'?plan.length+' PNGs with iOS/iPadOS and macOS asset catalogs. Conventional raster icons; all outputs are opaque.':presetHelp[state.preset]);
+    $('preview-size').replaceChildren();
+    plan.forEach((p,i)=>{const option=node('option','',p.width+' × '+p.height+' · '+p.purpose);option.value=String(i);$('preview-size').appendChild(option);});
+    state.previewIndex=Math.min(state.previewIndex,Math.max(0,plan.length-1));$('preview-size').value=String(state.previewIndex);
+    $('custom').hidden=state.preset!=='custom';
+    setText('bg-help',state.preset==='apple'?'All Apple outputs are flattened onto this color.':state.preset==='android'?'Adaptive foregrounds stay transparent. This color fills the adaptive background and store icon.':state.preset==='web'?'Touch and maskable icons always use this solid color.':'Choose transparent pixels or a solid background for every output.');
+    $$('input[name="rs-background"]').forEach(input=>{input.disabled=state.preset==='apple';});
+    if(state.preset==='apple')$$('input[name="rs-background"]').forEach(input=>{input.checked=input.value==='solid';});
+    else $$('input[name="rs-background"]').forEach(input=>{input.checked=input.value===state.background;});
+    const pixels=plan.reduce((n,p)=>n+p.width*p.height,0)*state.files.length;
+    let blocked=error||(!state.files.length?'Add artwork to get started.':state.files.some(f=>f.status!=='ready')?'Resolve linked assets or remove artwork with errors.':state.trim&&state.files.some(f=>!f.bounds)?'No visible artwork found. Turn trimming off or replace the SVG.':pixels>LIMIT.pixels?'This batch is too large. Use fewer files or smaller sizes.':'');
+    if(plan.length*state.files.length>LIMIT.outputs)blocked='This batch has too many outputs. Split it into smaller batches.';
+    $('generate').disabled=Boolean(blocked)||state.busy||state.ingesting;
+    if(!state.busy)setText('export-note',state.ingesting?'Preparing your artwork…':blocked||'Lossless PNGs · generated on your device');
+    return {plan,error:blocked};
+  }
+  function refresh() {
+    drawFiles();drawAlerts();updatePlan();
+    $('settings').disabled=state.busy||state.ingesting;
+    for(const id of ['browse','paste-open','sample','clear','reset','file-input'])$(id).disabled=state.busy||state.ingesting;
+    $('preview-size').disabled=state.busy||state.ingesting||!selectedFile();
+    $('download-png').disabled=state.busy||state.ingesting||!selectedFile();
+  }
+  let previewTimer,previewChain=Promise.resolve();
+  function schedulePreview() {
+    const version=++state.previewVersion;clearTimeout(previewTimer);
+    if(!selectedFile()){
+      if(state.previewURL)URL.revokeObjectURL(state.previewURL);state.previewURL=null;
+      $('preview-img').hidden=true;$('preview-img').removeAttribute('src');$('preview-empty').hidden=false;
+      setText('preview-caption','Add an SVG to see your export.');
+    }else if(!state.busy){setText('preview-caption','Updating preview…');}
+    previewTimer=setTimeout(()=>{previewChain=previewChain.catch(()=>{}).then(()=>updatePreview(version));},120);
+  }
+  function sizePreview() {
+    const img=$('preview-img');if(img.hidden||!img.dataset.width)return;
+    const w=Number(img.dataset.width),h=Number(img.dataset.height);
+    const scale=Math.min(1,$('stage').clientWidth*.78/w,$('stage').clientHeight*.78/h);
+    img.style.width=Math.max(1,Math.round(w*scale))+'px';img.style.height=Math.max(1,Math.round(h*scale))+'px';
+  }
+  async function updatePreview(version) {
+    if(version!==state.previewVersion||state.busy)return;
+    const file=selectedFile();
+    if(!file){if(state.previewURL)URL.revokeObjectURL(state.previewURL);state.previewURL=null;$('preview-img').hidden=true;$('preview-img').removeAttribute('src');$('preview-empty').hidden=false;setText('preview-caption','Add an SVG to see your export.');return;}
+    let target;try{target=getPlan()[state.previewIndex];}catch{return;}if(!target)return;
+    $('stage').setAttribute('aria-busy','true');setText('preview-caption','Updating preview…');
+    try{
+      const e=await getEngine();const scale=Math.min(1,640/Math.max(target.width,target.height));
+      const blob=await renderOutput(file,target,snapshot(),e,scale);
+      if(version!==state.previewVersion||state.busy)return;
+      const next=URL.createObjectURL(blob),previous=state.previewURL;state.previewURL=next;
+      $('preview-img').src=next;$('preview-img').alt=file.name+' — '+target.purpose+' preview';$('preview-img').hidden=false;$('preview-empty').hidden=true;
+      if(previous)URL.revokeObjectURL(previous);
+      $('preview-img').dataset.width=String(target.width);$('preview-img').dataset.height=String(target.height);sizePreview();
+      setText('preview-caption',target.width+' × '+target.height+' px · '+(target.transparent?'Transparent':target.opaque||state.background==='solid'?'Solid background':'Transparent')+(target.safe?' · Safe zone':''));
+    }catch(e){if(version===state.previewVersion){setText('preview-caption',errorText(e));$('preview-img').hidden=true;$('preview-empty').hidden=false;}}
+    finally{if(version===state.previewVersion)$('stage').removeAttribute('aria-busy');}
+  }
+  let ingestCounter=0,assetAbort=null;
+  async function prepareFile(file,resolver=null) {
+    const ctx={deps:new Set(),warnings:new Set(),resolve:resolver,nodes:0};
+    const clean=await sanitizeSVG(file.raw,ctx);Object.assign(file,clean);
+    if(clean.deps.length&&!resolver){file.status='linked';return;}
+    const e=await getEngine();await analyze(file,e);
+    const thumb=await renderOutput(file,{width:72,height:72},{trim:false,padding:5,background:'transparent',color:'#ffffff'},e);
+    if(file.thumb)URL.revokeObjectURL(file.thumb);file.thumb=URL.createObjectURL(thumb);file.status='ready';file.error='';
+    if(!state.selected)state.selected=file.id;
+  }
+  async function ingest(inputs) {
+    if(state.busy||state.ingesting)return;
+    state.ingesting=true;state.ingestErrors=[];releaseResult();showError();refresh();
+    const chosen=[...inputs];
+    try{
+      for(const input of chosen){
+        if(state.files.length>=LIMIT.files){state.ingestErrors.push('The collection is full (20 SVGs). Extra files were not added.');break;}
+        if(!/\.svg$/i.test(input.name)&&input.type!=='image/svg+xml'){state.ingestErrors.push(input.name+': choose an SVG file.');continue;}
+        if(input.size>LIMIT.file){state.ingestErrors.push(input.name+': exceeds the 5 MB per-file limit.');continue;}
+        if(state.files.reduce((n,f)=>n+f.size,0)+input.size>LIMIT.input){state.ingestErrors.push('Total SVG input exceeds 50 MB. Remove files before adding more.');break;}
+        const raw=await input.text();let base=safeName(input.name);if(/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(base))base='icon-'+base;const originalBase=base;let suffix=2;while(state.files.some(f=>f.base.toLowerCase()===base.toLowerCase()))base=originalBase+'-'+suffix++;
+        const file={id:++ingestCounter,name:input.name,base,raw,size:input.size,status:'loading',warnings:[],deps:[],thumb:null,error:''};state.files.push(file);drawFiles();
+        try{await prepareFile(file);}catch(e){file.status='error';file.error=errorText(e);}
+        refresh();await pause();
+      }
+    }catch(e){state.ingestErrors.push(errorText(e));}
+    finally{state.ingesting=false;$('file-input').value='';refresh();schedulePreview();live(state.files.filter(f=>f.status==='ready').length+' SVG files ready.');}
+  }
+  async function loadLinked() {
+    if(state.busy||state.ingesting)return;state.ingesting=true;assetAbort=new AbortController();refresh();
+    const resolve=createResolver(assetAbort.signal);
+    try{for(const file of state.files.filter(f=>f.status==='linked')){file.error='';try{await prepareFile(file,resolve);}catch(e){file.status='linked';file.error=errorText(e);}}}
+    finally{assetAbort=null;state.ingesting=false;refresh();schedulePreview();}
+  }
+  function setProgress(value,text) {$('progress-bar').value=value;setText('progress-text',text);}
+  function ensureJob(id) {if(id!==state.job)throw new DOMException('Export cancelled','AbortError');}
+  async function generate() {
+    const {plan,error}=updatePlan();if(error||state.busy||state.ingesting)return;
+    state.busy=true;state.previewVersion++;clearTimeout(previewTimer);const job=++state.job;const options=snapshot(),files=[...state.files];
+    releaseResult();showError();$('progress').hidden=false;setProgress(0,'Preparing '+files.length+' SVG'+(files.length===1?'':'s')+'…');setText('generate-label','Generating…');$('generate').classList.add('rs-busy');refresh();
+    const start=performance.now();const total=files.length*plan.length;let completed=0;
+    try{
+      await previewChain;ensureJob(job);const e=await getEngine();await e.zipReset();
+      for(const file of files){
+        const icoImages=[];
+        for(const target of plan){
+          ensureJob(job);setProgress(completed/total*95,file.base+' · '+target.width+' × '+target.height);
+          let blob=await renderOutput(file,target,options,e);ensureJob(job);
+          await e.zipAdd(file.base+'/'+target.name,blob);ensureJob(job);
+          if(target.ico)icoImages.push({width:target.width,blob});blob=null;completed++;
+          setProgress(completed/total*95,completed+' of '+total+' PNGs generated');await pause();
+        }
+        if(icoImages.length)await e.zipAdd(file.base+'/web/favicon.ico',e.kernel.ico(icoImages));
+        icoImages.length=0;
+        for(const extra of packageExtras(file,plan,options)){ensureJob(job);await e.zipAdd(file.base+'/'+extra.name,extra.blob);}
+      }
+      ensureJob(job);setProgress(98,'Finishing your ZIP…');const blob=await e.zipFinish();ensureJob(job);
+      const name=(files.length===1?files[0].base:'svg-icons')+'-'+options.preset+'.zip';state.result={blob,name};
+      setProgress(100,'Complete');setText('result-meta',total+' PNG'+(total===1?'':'s')+' · '+sizeLabel(blob.size)+' · '+((performance.now()-start)/1000).toFixed(1)+' seconds');$('result').hidden=false;
+      download(blob,name);live('Your icon set is ready. '+total+' PNGs generated.');toast('Your ZIP is ready. You can download it again below.');
+    }catch(e){if(job===state.job){showError(errorText(e));live('Export could not finish. '+errorText(e));}}
+    finally{if(job===state.job){state.busy=false;$('progress').hidden=true;setText('generate-label','Generate icon set');$('generate').classList.remove('rs-busy');refresh();schedulePreview();}}
+  }
+  async function cancel() {
+    if(!state.busy)return;++state.job;engine?.stop();engine=await new Engine().init();
+    state.busy=false;$('progress').hidden=true;setText('generate-label','Generate icon set');$('generate').classList.remove('rs-busy');showError();refresh();schedulePreview();toast('Export cancelled. Your artwork and settings are still here.');
+  }
+  // The engine accessor remains stable across cancellation/restarts.
+  async function getEngine(){await engineReady;return engine;}
+  async function downloadPNG() {
+    if(state.busy||state.ingesting)return;const file=selectedFile();if(!file)return;let target;try{target=getPlan()[state.previewIndex];}catch(e){showError(errorText(e));return;}if(!target)return;
+    state.busy=true;const job=++state.job;state.previewVersion++;clearTimeout(previewTimer);showError();refresh();
+    try{await previewChain;const blob=await renderOutput(file,target,snapshot(),await getEngine());ensureJob(job);download(blob,file.base+'-'+target.name.split('/').pop());toast('PNG ready: '+target.width+' × '+target.height+' px.');}
+    catch(e){if(job===state.job)showError(errorText(e));}
+    finally{if(job===state.job){state.busy=false;refresh();schedulePreview();}}
+  }
+  function settingsChanged(){releaseResult();showError();refresh();schedulePreview();}
+  function resetSettings() {
+    if(state.busy||state.ingesting)return;
+    Object.assign(state,{preset:'web',padding:10,trim:true,background:'transparent',color:'#ffffff',custom:'64, 128, 256, 512, 1024',previewIndex:0});
+    $$('input[name="rs-preset"]').forEach(i=>{i.checked=i.value==='web';});$('trim').checked=true;$('padding').value='10';setText('padding-value','10%');$('color').value='#ffffff';$('color-hex').value='#FFFFFF';$('custom-sizes').value=state.custom;settingsChanged();
+  }
+  $('browse').addEventListener('click',()=>$('file-input').click());
+  $('file-input').addEventListener('change',e=>ingest(e.target.files));
+  $('drop').addEventListener('dragover',e=>{e.preventDefault();if(!state.busy&&!state.ingesting){e.dataTransfer.dropEffect='copy';$('drop').classList.add('rs-drag');}});
+  $('drop').addEventListener('dragleave',e=>{if(!$('drop').contains(e.relatedTarget))$('drop').classList.remove('rs-drag');});
+  $('drop').addEventListener('drop',e=>{e.preventDefault();$('drop').classList.remove('rs-drag');if(e.dataTransfer.files.length)ingest(e.dataTransfer.files);});
+  // Prevent an accidentally dropped SVG from replacing the tool page.
+  ROOT.addEventListener('dragover',e=>e.preventDefault());ROOT.addEventListener('drop',e=>e.preventDefault());
+  $('paste-open').addEventListener('click',()=>{$('paste-dialog').showModal();$('paste-text').focus();});
+  $('about-open').addEventListener('click',()=>$('about-dialog').showModal());
+  $$('[data-close]').forEach(button=>button.addEventListener('click',()=>document.getElementById(button.dataset.close).close()));
+  $('paste-form').addEventListener('submit',e=>{e.preventDefault();const raw=$('paste-text').value;if(!raw.trim())return;let name=$('paste-name').value.trim()||'artwork.svg';if(!/\.svg$/i.test(name))name+='.svg';$('paste-dialog').close();ingest([new File([raw],name,{type:'image/svg+xml'})]);});
+  $('clear').addEventListener('click',()=>{if(state.busy||state.ingesting)return;for(const file of state.files)releaseFile(file);state.files=[];state.selected=null;state.ingestErrors=[];releaseResult();showError();refresh();schedulePreview();live('All artwork cleared.');});
+  $('sample').addEventListener('click',()=>ingest([new File(['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><defs><linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#58ae88"/><stop offset="1" stop-color="#104f43"/></linearGradient></defs><path d="M128 28C179 28 220 69 220 120v8c0 55-38 92-92 100-54-8-92-45-92-100v-8c0-51 41-92 92-92Z" fill="url(#leaf)"/><path d="M83 169c0-61 24-87 88-87-2 64-29 88-88 87Z" fill="#e9f6d9"/><path d="m85 167 62-62" stroke="#388362" stroke-width="6" stroke-linecap="round"/><path d="M110 142v-25m0 25h25" fill="none" stroke="#388362" stroke-width="5" stroke-linecap="round"/></svg>'],'evergreen.svg',{type:'image/svg+xml'})]));
+  $$('input[name="rs-preset"]').forEach(i=>i.addEventListener('change',()=>{state.preset=i.value;state.previewIndex=0;settingsChanged();}));
+  $$('input[name="rs-background"]').forEach(i=>i.addEventListener('change',()=>{state.background=i.value;settingsChanged();}));
+  $('trim').addEventListener('change',e=>{state.trim=e.target.checked;settingsChanged();});
+  $('padding').addEventListener('input',e=>{state.padding=Number(e.target.value);setText('padding-value',state.padding+'%');settingsChanged();});
+  $('custom-sizes').addEventListener('input',e=>{state.custom=e.target.value;settingsChanged();});
+  $('color').addEventListener('input',e=>{state.color=e.target.value;$('color-hex').value=state.color.toUpperCase();$('color-hex').removeAttribute('aria-invalid');settingsChanged();});
+  $('color-hex').addEventListener('change',e=>{let color=e.target.value.trim();if(!color.startsWith('#'))color='#'+color;if(/^#[a-f0-9]{3}$/i.test(color))color='#'+[...color.slice(1)].map(c=>c+c).join('');if(!/^#[a-f0-9]{6}$/i.test(color)){e.target.value=state.color.toUpperCase();toast('Use a hex color such as #FFFFFF.');return;}state.color=color.toLowerCase();$('color').value=state.color;e.target.value=color.toUpperCase();settingsChanged();});
+  $('preview-size').addEventListener('change',e=>{state.previewIndex=Number(e.target.value);schedulePreview();});
+  $$('.rs-swatch').forEach(button=>button.addEventListener('click',()=>{$('stage').dataset.tone=button.dataset.tone;$$('.rs-swatch').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));}));
+  $('reset').addEventListener('click',resetSettings);$('generate').addEventListener('click',generate);$('cancel').addEventListener('click',cancel);$('download-png').addEventListener('click',downloadPNG);
+  $('download-zip').addEventListener('click',()=>{if(state.result)download(state.result.blob,state.result.name);});
+  if(window.ResizeObserver)new ResizeObserver(sizePreview).observe($('stage'));
+  else window.addEventListener('resize',sizePreview);
+  window.addEventListener('pagehide',()=>{assetAbort?.abort();for(const url of downloadURLs)URL.revokeObjectURL(url);downloadURLs.clear();});
+  refresh();
+})();
+</script>
 </body>
 </html>
