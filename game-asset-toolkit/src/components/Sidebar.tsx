@@ -8,6 +8,7 @@ import {
   Box,
   Grid3X3,
   Package,
+  FileImage,
   Sun,
   Moon,
   Monitor,
@@ -40,6 +41,12 @@ const tools = [
     description: "Multi-folder · Presets · CI",
     icon: Package,
     href: "/tools/batch-export",
+  },
+  {
+    name: "SVG to PNG Set",
+    description: "Web · Apple · Android icons",
+    icon: FileImage,
+    href: "/tools/svg-png-set",
   },
 ] as const;
 

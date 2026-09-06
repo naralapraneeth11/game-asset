@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Scaling, Box, Grid3X3, Package, Shield } from "lucide-react";
+import { ArrowRight, Scaling, Box, Grid3X3, Package, FileImage, Shield } from "lucide-react";
 
 const tools = [
   {
@@ -25,6 +25,12 @@ const tools = [
     description: "Multi-folder · Presets · Multi-scale · CI-ready",
     href: "/tools/batch-export",
     icon: Package,
+  },
+  {
+    name: "SVG to PNG Set",
+    description: "Web · Apple · Android · Favicons · App icons · Local",
+    href: "/tools/svg-png-set",
+    icon: FileImage,
   },
 ];
 
