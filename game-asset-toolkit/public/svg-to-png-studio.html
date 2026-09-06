@@ -1,19 +1,25 @@
 <!doctype html>
 <!--
-SVG to PNG Studio — single-file distribution, v1.0.0
+Game Asset Toolkit — SVG to PNG Set, v1.0.0
 Copyright (c) 2026. Permission is granted to use, modify, and distribute this file.
+
+APP INTEGRATION
+The Next.js route mounts this file through src/tools/svg-png-set/SvgPngSet.tsx.
+The app owns the page heading, resolved theme, typography, and iframe sizing.
+Native dialogs/toasts use host-visible viewport offsets in embedded mode.
+Only same-origin app font assets may be reused; no third-party UI dependencies.
 
 DEPLOYMENT
 1. Serve this file as text/html over HTTPS, or open it locally. No build, package,
    CDN, API key, analytics, uploads, or server-side processing is required.
 2. To embed in an existing site, use an iframe whose src points to this file:
-   <iframe src="/tools/svg-to-png-studio.html" title="SVG to PNG Studio"
+   <iframe src="/tools/svg-to-png-studio.html" title="SVG to PNG Set"
            style="width:100%;height:1200px;border:0" loading="lazy"></iframe>
    If you sandbox the iframe, allow scripts, same-origin, and downloads.
 3. A stricter host CSP must authorize this file's inline style/script (hashes or
    nonces) and blob workers/images. The meta policy cannot loosen a host policy.
    connect-src https: is used ONLY after the user chooses to load linked assets.
-4. Branding, limits, presets, UI, renderer, and ZIP writer all live in this file.
+4. Limits, presets, UI, renderer, and ZIP writer all live in this file.
    Prefer embedding the whole page; copying scripts into a CMS may strip them.
 
 ENGINEERING NOTES
@@ -51,171 +57,212 @@ https://www.w3.org/TR/appmanifest/#icon-masks
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Turn SVG artwork into precisely sized PNGs, favicons, and app icon bundles. Private, local, and completely in your browser.">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' blob:; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; worker-src blob:; connect-src https:; base-uri 'none'; form-action 'none'; object-src 'none'">
-  <meta name="color-scheme" content="light">
-  <title>SVG to PNG Studio</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' blob:; style-src 'unsafe-inline'; img-src data: blob:; font-src 'self' data:; worker-src blob:; connect-src https:; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <meta name="color-scheme" content="light dark">
+  <title>SVG to PNG Set · Game Asset Toolkit</title>
+  <script>
+    // Match the shell before first paint. The React wrapper handles live changes.
+    (() => {
+      const root = document.documentElement;
+      try {
+        if (window.parent !== window && window.parent.location.origin === window.location.origin) {
+          root.dataset.embedded = 'true';
+          root.dataset.theme = window.parent.document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+          return;
+        }
+      } catch { /* A cross-origin embed uses the standalone fallback. */ }
+      const media = window.matchMedia('(prefers-color-scheme: dark)');
+      const apply = () => {
+        let preference = 'system';
+        try { preference = localStorage.getItem('theme') || 'system'; } catch {}
+        root.dataset.theme = preference === 'dark' || (preference !== 'light' && media.matches) ? 'dark' : 'light';
+      };
+      apply();
+      media.addEventListener('change', apply);
+      window.addEventListener('storage', event => { if (event.key === 'theme' || event.key === null) apply(); });
+    })();
+  </script>
   <style>
-    html,body{margin:0;padding:0;background:#f6f7f9}
-    #svg-png-studio{--ink:#17232b;--muted:#64727b;--line:#e3e8eb;--accent:#116b59;--soft:#e8f3ee;--paper:#fff;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);max-width:1240px;margin:0 auto;padding:0 40px 36px;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+    :root{color-scheme:light;--background:#fafafa;--foreground:#0a0a0a;--muted:#f4f4f5;--muted-foreground:#71717a;--border:#e4e4e7;--accent:#171717;--accent-foreground:#fafafa;--card:#fff;--hover:#f4f4f5;--tool-card:#fff;--control:#fff;--surface:#fafafa;--subtle:#f5f5f5;--selected:#f5f5f5;--strong-border:#d4d4d4;--grid:#e5e5e5;--shadow:0 1px 2px #0000000d;--danger:#b42318;--notice-bg:#fffbeb;--notice-border:#f0d99a;--notice-ink:#78350f}
+    :root[data-theme=dark]{color-scheme:dark;--background:#09090b;--foreground:#fafafa;--muted:#18181b;--muted-foreground:#a1a1aa;--border:#27272a;--accent:#fafafa;--accent-foreground:#09090b;--card:#111113;--hover:#18181b;--tool-card:#171717;--control:#262626;--surface:#1c1c1c;--subtle:#262626;--selected:#262626;--strong-border:#525252;--grid:#333;--shadow:0 1px 2px #0003;--danger:#fca5a5;--notice-bg:#272218;--notice-border:#59472b;--notice-ink:#fde6b2}
+    html,body{margin:0;padding:0;min-height:0;background:var(--background)}
+    html[data-embedded=true],html[data-embedded=true] body{background:transparent}
+    html{scrollbar-width:thin;scrollbar-color:var(--strong-border) transparent}
+    ::selection{background:var(--accent);color:var(--accent-foreground)}
+    #svg-png-studio{--ink:var(--foreground);--line:var(--border);--soft:var(--hover);--paper:var(--tool-card);font:13px/1.5 var(--host-font-family,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif);color:var(--ink);width:100%;max-width:848px;min-width:0;margin:0 auto;padding:24px;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+    html[data-embedded=true] #svg-png-studio{max-width:none;padding:0}
     #svg-png-studio *,#svg-png-studio *::before,#svg-png-studio *::after{box-sizing:border-box}
     #svg-png-studio [hidden]{display:none!important}
     #svg-png-studio button,#svg-png-studio input,#svg-png-studio select,#svg-png-studio textarea{font:inherit;color:inherit}
     #svg-png-studio button{cursor:pointer}
     #svg-png-studio button:disabled{cursor:not-allowed;opacity:.46}
     #svg-png-studio button,#svg-png-studio a,#svg-png-studio input,#svg-png-studio select,#svg-png-studio textarea{outline-offset:4px}
-    #svg-png-studio :focus-visible{outline:3px solid #198b73}
-    #svg-png-studio a{color:var(--accent)}
+    #svg-png-studio :focus-visible{outline:3px solid var(--accent)}
+    #svg-png-studio a{color:var(--muted-foreground)}
     #svg-png-studio h1,#svg-png-studio h2,#svg-png-studio h3,#svg-png-studio p{margin:0}
     #svg-png-studio svg.rs-icon{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
     #svg-png-studio .rs-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-    #svg-png-studio .rs-top{display:flex;align-items:center;justify-content:space-between;height:92px;border-bottom:1px solid var(--line);gap:16px}
-    #svg-png-studio .rs-brand{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:650;letter-spacing:-.5px}
-    #svg-png-studio .rs-mark{width:32px;height:32px;display:grid;place-items:center;background:var(--ink);color:white;border-radius:10px}
-    #svg-png-studio .rs-brand small{font-size:11px;letter-spacing:1.2px;color:var(--muted);margin-left:5px;font-weight:550}
-    #svg-png-studio .rs-private{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--accent)}
-    #svg-png-studio .rs-dot{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block}
-    #svg-png-studio .rs-hero{padding:41px 0 30px;display:flex;align-items:flex-end;justify-content:space-between;gap:24px}
-    #svg-png-studio .rs-eyebrow{font-size:10px;font-weight:700;letter-spacing:1.8px;color:var(--accent);margin-bottom:10px}
-    #svg-png-studio h1{font-size:clamp(29px,3.6vw,43px);line-height:1.15;letter-spacing:-1.7px;font-weight:650;margin-bottom:13px}
-    #svg-png-studio .rs-lead{font-size:15px;color:var(--muted);max-width:600px}
-    #svg-png-studio .rs-hero-note{color:var(--muted);font-size:11px;white-space:nowrap;padding-bottom:3px}
-    #svg-png-studio .rs-workspace{display:grid;grid-template-columns:minmax(0,1fr) 354px;align-items:start;gap:22px}
-    #svg-png-studio .rs-card{background:var(--paper);border:1px solid var(--line);border-radius:18px;box-shadow:0 3px 8px #1b363403;overflow:hidden}
-    #svg-png-studio .rs-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:19px 23px;border-bottom:1px solid var(--line)}
-    #svg-png-studio h2{font-size:14px;font-weight:650;letter-spacing:-.2px}
-    #svg-png-studio .rs-count{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+    #svg-png-studio .rs-workspace{display:grid;grid-template-columns:minmax(0,1fr) 310px;align-items:start;gap:20px}
+    #svg-png-studio .rs-card{background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+    #svg-png-studio .rs-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 20px;border-bottom:1px solid var(--line)}
+    #svg-png-studio h2{font-size:13px;font-weight:500;letter-spacing:-.2px}
+    #svg-png-studio .rs-count{font-size:11px;color:var(--muted-foreground);font-variant-numeric:tabular-nums}
     #svg-png-studio .rs-left{min-width:0;display:grid;gap:18px}
-    #svg-png-studio .rs-drop{margin:20px;border:1.5px dashed #cbd5d8;border-radius:13px;padding:32px 18px;text-align:center;background:#fafcfc;transition:background .18s,border-color .18s;position:relative}
+    #svg-png-studio .rs-drop{margin:20px;border:2px dashed var(--line);border-radius:8px;min-height:240px;padding:30px 16px;text-align:center;background:var(--surface);transition:background .18s,border-color .18s;position:relative}
     #svg-png-studio .rs-drop.rs-drag{background:var(--soft);border-color:var(--accent)}
-    #svg-png-studio .rs-upload-glyph{width:45px;height:45px;border:1px solid var(--line);border-radius:13px;background:#fff;display:grid;place-items:center;margin:0 auto 13px;box-shadow:0 3px 6px #17232b05;color:var(--accent)}
-    #svg-png-studio .rs-drop-title{font-weight:600;font-size:15px}
-    #svg-png-studio .rs-drop p{color:var(--muted);font-size:12px;margin:6px 0 17px}
-    #svg-png-studio .rs-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:39px;padding:9px 15px;border:1px solid var(--line);border-radius:9px;background:white;font-weight:550;font-size:12px;text-decoration:none;transition:background .15s,transform .15s}
-    #svg-png-studio .rs-btn:hover:not(:disabled){background:#f3f6f6}
+    #svg-png-studio .rs-upload-glyph{width:48px;height:48px;border:1px solid var(--line);border-radius:8px;background:var(--control);display:grid;place-items:center;margin:0 auto 13px;box-shadow:0 3px 6px #00000008;color:var(--accent)}
+    #svg-png-studio .rs-drop-title{font-weight:500;font-size:14px}
+    #svg-png-studio .rs-drop p{color:var(--muted-foreground);font-size:12px;margin:6px 0 17px}
+    #svg-png-studio .rs-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:39px;padding:9px 15px;border:1px solid var(--line);border-radius:8px;background:var(--control);font-weight:550;font-size:12px;text-decoration:none;transition:background .15s,transform .15s}
+    #svg-png-studio .rs-btn:hover:not(:disabled){background:var(--hover)}
     #svg-png-studio .rs-btn:active:not(:disabled){transform:translateY(1px)}
-    #svg-png-studio .rs-btn-dark{background:var(--ink);color:#fff;border-color:var(--ink)}
-    #svg-png-studio .rs-btn-dark:hover:not(:disabled){background:#2b3c47}
+    #svg-png-studio .rs-btn-dark{background:var(--accent);color:var(--accent-foreground);border-color:var(--accent)}
+    #svg-png-studio .rs-btn-dark:hover:not(:disabled){background:var(--accent);opacity:.85}
     #svg-png-studio .rs-text-btn{background:none;border:0;color:var(--accent);font-size:12px;min-height:36px;padding:6px 9px;border-radius:6px}
     #svg-png-studio .rs-text-btn:hover:not(:disabled){background:var(--soft)}
     #svg-png-studio .rs-drop-actions{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;align-items:center}
     #svg-png-studio .rs-file-list{list-style:none;margin:0;padding:0 20px;max-height:240px;overflow-y:auto}
-    #svg-png-studio .rs-file{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;margin-bottom:9px;background:#fff;padding:6px}
-    #svg-png-studio .rs-file.rs-selected{border-color:#8abcae;background:#f4faf7}
+    #svg-png-studio .rs-file{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;margin-bottom:9px;background:var(--control);padding:6px}
+    #svg-png-studio .rs-file.rs-selected{border-color:var(--accent);background:var(--selected)}
     #svg-png-studio .rs-file-pick{display:flex;gap:11px;align-items:center;text-align:left;border:0;background:none;min-width:0;flex:1;padding:2px}
-    #svg-png-studio .rs-thumb{width:37px;height:37px;border-radius:7px;object-fit:contain;background:#eef2f2;padding:3px;flex:none}
+    #svg-png-studio .rs-thumb{width:37px;height:37px;border-radius:7px;object-fit:contain;background:var(--subtle);padding:3px;flex:none}
     #svg-png-studio .rs-file-meta{min-width:0}
     #svg-png-studio .rs-file-name{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:550;font-size:12px}
-    #svg-png-studio .rs-file-info{display:block;font-size:10px;color:var(--muted);overflow-wrap:anywhere}
-    #svg-png-studio .rs-icon-btn{border:0;background:none;display:grid;place-items:center;width:34px;min-width:34px;height:34px;border-radius:7px;color:var(--muted)}
-    #svg-png-studio .rs-icon-btn:hover{background:#eaf0ef;color:var(--ink)}
-    #svg-png-studio .rs-upload-bottom{display:flex;justify-content:space-between;align-items:center;padding:0 20px 14px;color:var(--muted);font-size:11px;gap:12px}
+    #svg-png-studio .rs-file-info{display:block;font-size:10px;color:var(--muted-foreground);overflow-wrap:anywhere}
+    #svg-png-studio .rs-icon-btn{border:0;background:none;display:grid;place-items:center;width:34px;min-width:34px;height:34px;border-radius:7px;color:var(--muted-foreground)}
+    #svg-png-studio .rs-icon-btn:hover{background:var(--hover);color:var(--ink)}
+    #svg-png-studio .rs-upload-bottom{display:flex;justify-content:space-between;align-items:center;padding:0 20px 14px;color:var(--muted-foreground);font-size:11px;gap:12px}
     #svg-png-studio .rs-preview-head{flex-wrap:wrap}
     #svg-png-studio .rs-preview-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     #svg-png-studio .rs-swatch-group{display:flex;padding:3px;border:1px solid var(--line);border-radius:8px;gap:4px}
-    #svg-png-studio .rs-swatch{border:1px solid #cbd3d7;border-radius:4px;width:20px;height:20px;padding:0}
+    #svg-png-studio .rs-swatch{border:1px solid var(--strong-border);border-radius:4px;width:20px;height:20px;padding:0}
     #svg-png-studio .rs-swatch[aria-pressed=true]{outline:2px solid var(--accent);outline-offset:1px}
-    #svg-png-studio .rs-checker{background-color:#fff;background-image:conic-gradient(#e8edef 25%,transparent 0 50%,#e8edef 0 75%,transparent 0);background-size:16px 16px}
-    #svg-png-studio .rs-preview-stage{height:340px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background-color:#f7f9fa;background-image:radial-gradient(#d6dfe1 .7px,transparent .7px);background-size:16px 16px;margin:0 20px;border:1px solid var(--line);border-radius:12px}
+    #svg-png-studio .rs-checker{background-color:var(--surface);background-image:conic-gradient(var(--grid) 25%,transparent 0 50%,var(--grid) 0 75%,transparent 0);background-size:16px 16px}
+    #svg-png-studio .rs-preview-stage{height:300px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background-color:var(--surface);background-image:radial-gradient(var(--strong-border) .7px,transparent .7px);background-size:16px 16px;margin:0 20px;border:1px solid var(--line);border-radius:12px}
     #svg-png-studio .rs-preview-stage[data-tone=light]{background:#fff}
-    #svg-png-studio .rs-preview-stage[data-tone=dark]{background:#202c33}
-    #svg-png-studio .rs-preview-art{display:block;object-fit:contain;max-width:78%;max-height:78%;box-shadow:0 10px 35px #153c3510}
-    #svg-png-studio .rs-empty-art{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:22px;text-align:center;padding:20px;color:#6c7c83;font-size:12px}
-    #svg-png-studio .rs-empty-grid{display:grid;grid-template-columns:repeat(3,46px);align-items:end;gap:14px;transform:rotate(-8deg)}
-    #svg-png-studio .rs-empty-tile{display:grid;place-items:center;width:46px;height:46px;border:1px solid #d8e2df;background:#eff6f2;border-radius:12px;color:#6c9d8d;box-shadow:0 6px 12px #193c3008}
-    #svg-png-studio .rs-empty-tile:nth-child(2){height:65px;width:65px;margin-left:-9px;border-radius:17px;background:#dcece3;color:#427760}
+    #svg-png-studio .rs-preview-stage[data-tone=light] .rs-empty-art{color:#71717a}
+    #svg-png-studio .rs-preview-stage[data-tone=dark] .rs-empty-art{color:#a1a1aa}
+    #svg-png-studio .rs-preview-stage[data-tone=dark]{background:#171717}
+    #svg-png-studio .rs-preview-art{display:block;object-fit:contain;max-width:78%;max-height:78%;box-shadow:0 10px 35px #0000000d}
+    #svg-png-studio .rs-empty-art{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;text-align:center;padding:20px;color:var(--muted-foreground);font-size:12px}
+    #svg-png-studio .rs-empty-grid{display:grid;grid-template-columns:repeat(3,46px);align-items:end;gap:14px;transform:none}
+    #svg-png-studio .rs-empty-tile{display:grid;place-items:center;width:46px;height:46px;border:1px solid var(--line);background:var(--subtle);border-radius:12px;color:var(--muted-foreground);box-shadow:0 6px 12px #00000008}
+    #svg-png-studio .rs-empty-tile:nth-child(2){height:65px;width:65px;margin-left:-9px;border-radius:17px;background:var(--subtle);color:var(--ink)}
     #svg-png-studio .rs-empty-tile:nth-child(3){width:36px;height:36px;margin-left:10px;border-radius:10px}
     #svg-png-studio .rs-preview-bottom{display:flex;justify-content:space-between;align-items:center;padding:12px 21px 16px;gap:12px;min-height:53px}
-    #svg-png-studio .rs-preview-caption{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
-    #svg-png-studio .rs-select{border:1px solid var(--line);background:#fff;border-radius:7px;font-size:11px;padding:7px 26px 7px 9px;max-width:210px;min-height:34px}
+    #svg-png-studio .rs-preview-caption{font-size:11px;color:var(--muted-foreground);overflow-wrap:anywhere}
+    #svg-png-studio .rs-select{border:1px solid var(--line);background:var(--control);border-radius:7px;font-size:11px;padding:7px 26px 7px 9px;max-width:210px;min-height:34px}
     #svg-png-studio .rs-settings{padding:0;border:0;margin:0;min-width:0}
-    #svg-png-studio .rs-section{padding:21px 23px;border-bottom:1px solid var(--line)}
+    #svg-png-studio .rs-section{padding:20px;border-bottom:1px solid var(--line)}
     #svg-png-studio .rs-label-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px}
     #svg-png-studio .rs-label{font-size:12px;font-weight:600}
-    #svg-png-studio .rs-step{font-size:10px;color:#93a09f;font-weight:500;margin-right:8px;letter-spacing:.5px}
+    #svg-png-studio .rs-step{font-size:10px;color:var(--muted-foreground);font-weight:500;margin-right:8px;letter-spacing:.5px}
     #svg-png-studio .rs-presets{display:grid;grid-template-columns:1fr 1fr;gap:9px}
     #svg-png-studio .rs-preset{position:relative;cursor:pointer}
     #svg-png-studio .rs-preset input{position:absolute;opacity:0;width:1px;height:1px}
     #svg-png-studio .rs-preset-body{display:flex;flex-direction:column;gap:3px;padding:13px;border:1px solid var(--line);border-radius:10px;min-height:94px;transition:background .15s,border-color .15s}
-    #svg-png-studio .rs-preset input:checked+.rs-preset-body{background:var(--soft);border-color:#73a694}
-    #svg-png-studio .rs-preset input:focus-visible+.rs-preset-body{outline:3px solid #198b73;outline-offset:3px}
-    #svg-png-studio .rs-preset-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;color:var(--muted)}
-    #svg-png-studio .rs-radio-dot{width:12px;height:12px;border:1px solid #c2cccc;border-radius:50%}
+    #svg-png-studio .rs-preset input:checked+.rs-preset-body{background:var(--soft);border-color:var(--accent)}
+    #svg-png-studio .rs-preset input:focus-visible+.rs-preset-body{outline:3px solid var(--accent);outline-offset:3px}
+    #svg-png-studio .rs-preset-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;color:var(--muted-foreground)}
+    #svg-png-studio .rs-radio-dot{width:12px;height:12px;border:1px solid var(--strong-border);border-radius:50%}
     #svg-png-studio .rs-preset input:checked+.rs-preset-body .rs-radio-dot{border:4px solid var(--accent);background:#fff}
     #svg-png-studio .rs-preset strong{font-size:12px;font-weight:600}
-    #svg-png-studio .rs-preset small{font-size:10px;color:var(--muted)}
-    #svg-png-studio .rs-help{font-size:11px;color:var(--muted);margin-top:11px;line-height:1.6}
+    #svg-png-studio .rs-preset small{font-size:10px;color:var(--muted-foreground)}
+    #svg-png-studio .rs-help{font-size:11px;color:var(--muted-foreground);margin-top:11px;line-height:1.6}
     #svg-png-studio .rs-range{width:100%;accent-color:var(--accent);height:20px;margin:3px 0 0;cursor:pointer}
-    #svg-png-studio .rs-range-marks{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:1px}
-    #svg-png-studio .rs-value{font-size:12px;font-variant-numeric:tabular-nums;background:#f1f5f4;border:1px solid var(--line);border-radius:6px;padding:2px 8px}
+    #svg-png-studio .rs-range-marks{display:flex;justify-content:space-between;font-size:10px;color:var(--muted-foreground);margin-top:1px}
+    #svg-png-studio .rs-value{font-size:12px;font-variant-numeric:tabular-nums;background:var(--subtle);border:1px solid var(--line);border-radius:6px;padding:2px 8px}
     #svg-png-studio .rs-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:19px;cursor:pointer}
-    #svg-png-studio .rs-toggle{appearance:none;width:33px;height:20px;border-radius:20px;background:#c7d0d2;position:relative;cursor:pointer;flex:none;margin:0;transition:background .18s}
-    #svg-png-studio .rs-toggle:before{content:"";position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;top:3px;left:3px;box-shadow:0 1px 3px #0002;transition:transform .18s}
+    #svg-png-studio .rs-toggle{appearance:none;width:33px;height:20px;border-radius:20px;background:var(--strong-border);position:relative;cursor:pointer;flex:none;margin:0;transition:background .18s}
+    #svg-png-studio .rs-toggle:before{content:"";position:absolute;width:14px;height:14px;border-radius:50%;background:var(--control);top:3px;left:3px;box-shadow:0 1px 3px #0002;transition:transform .18s}
     #svg-png-studio .rs-toggle:checked{background:var(--accent)}
     #svg-png-studio .rs-toggle:checked:before{transform:translateX(13px)}
-    #svg-png-studio .rs-toggle-copy small{display:block;font-size:10px;color:var(--muted);margin-top:3px}
-    #svg-png-studio .rs-segment{display:flex;background:#f2f5f5;border:1px solid var(--line);border-radius:8px;padding:3px;gap:3px;margin-bottom:12px}
+    #svg-png-studio .rs-toggle-copy small{display:block;font-size:10px;color:var(--muted-foreground);margin-top:3px}
+    #svg-png-studio .rs-segment{display:flex;background:var(--subtle);border:1px solid var(--line);border-radius:8px;padding:3px;gap:3px;margin-bottom:12px}
     #svg-png-studio .rs-segment label{flex:1;text-align:center;cursor:pointer;position:relative}
     #svg-png-studio .rs-segment input{position:absolute;opacity:0;width:1px;height:1px}
     #svg-png-studio .rs-segment span{display:block;font-size:11px;border-radius:5px;padding:6px}
-    #svg-png-studio .rs-segment input:checked+span{background:#fff;box-shadow:0 1px 3px #243c3610;font-weight:600}
+    #svg-png-studio .rs-segment input:checked+span{background:var(--control);box-shadow:0 1px 3px #00000010;font-weight:600}
     #svg-png-studio .rs-segment input:focus-visible+span{outline:3px solid var(--accent)}
     #svg-png-studio .rs-color-row{display:flex;align-items:center;gap:8px}
-    #svg-png-studio input[type=color]{height:32px;width:36px;background:white;border:1px solid var(--line);border-radius:6px;padding:3px;cursor:pointer}
-    #svg-png-studio .rs-input{width:100%;min-width:0;border:1px solid #d6dfe1;border-radius:8px;padding:10px 11px;background:#fff;font-size:12px}
+    #svg-png-studio input[type=color]{height:32px;width:36px;background:var(--control);border:1px solid var(--line);border-radius:6px;padding:3px;cursor:pointer}
+    #svg-png-studio .rs-input{width:100%;min-width:0;border:1px solid var(--strong-border);border-radius:8px;padding:10px 11px;background:var(--control);font-size:12px}
     #svg-png-studio .rs-input:focus{border-color:var(--accent)}
     #svg-png-studio .rs-color-hex{width:92px;font:12px ui-monospace,SFMono-Regular,monospace;padding:6px 8px;text-transform:uppercase}
-    #svg-png-studio .rs-inline-label{font-size:10px;color:var(--muted);margin-left:auto}
+    #svg-png-studio .rs-inline-label{font-size:10px;color:var(--muted-foreground);margin-left:auto}
     #svg-png-studio .rs-custom{margin-top:15px}
     #svg-png-studio .rs-custom label{display:block;margin-bottom:6px;font-size:11px;font-weight:550}
-    #svg-png-studio .rs-error{color:#ab3b32;font-size:11px;margin-top:7px;overflow-wrap:anywhere}
-    #svg-png-studio .rs-export{padding:21px 23px}
+    #svg-png-studio .rs-error{color:var(--danger);font-size:11px;margin-top:7px;overflow-wrap:anywhere}
+    #svg-png-studio .rs-export{padding:20px}
     #svg-png-studio .rs-export-summary{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;margin-bottom:14px}
-    #svg-png-studio .rs-export-summary span{color:var(--muted);font-size:10px}
-    #svg-png-studio .rs-generate{width:100%;min-height:45px;background:var(--accent);border:1px solid var(--accent);border-radius:9px;color:white;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 3px 5px #12664f15}
-    #svg-png-studio .rs-generate:hover:not(:disabled){background:#0b5949}
-    #svg-png-studio .rs-export-note{font-size:10px;text-align:center;color:var(--muted);margin-top:9px}
+    #svg-png-studio .rs-export-summary span{color:var(--muted-foreground);font-size:10px}
+    #svg-png-studio .rs-generate{width:100%;min-height:45px;background:var(--accent);border:1px solid var(--accent);border-radius:8px;color:var(--accent-foreground);font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 3px 5px #0000000d}
+    #svg-png-studio .rs-generate:hover:not(:disabled){background:var(--accent);opacity:.85}
+    #svg-png-studio .rs-export-note{font-size:10px;text-align:center;color:var(--muted-foreground);margin-top:9px}
     #svg-png-studio .rs-progress{margin-top:14px}
     #svg-png-studio progress{width:100%;height:5px;display:block;accent-color:var(--accent);border:0;border-radius:4px;overflow:hidden}
-    #svg-png-studio progress::-webkit-progress-bar{background:#e7eeeb}
+    #svg-png-studio progress::-webkit-progress-bar{background:var(--subtle)}
     #svg-png-studio progress::-webkit-progress-value{background:var(--accent);transition:width .15s}
-    #svg-png-studio .rs-progress-line{display:flex;align-items:center;justify-content:space-between;gap:9px;font-size:10px;color:var(--muted);margin-top:6px}
+    #svg-png-studio .rs-progress-line{display:flex;align-items:center;justify-content:space-between;gap:9px;font-size:10px;color:var(--muted-foreground);margin-top:6px}
     #svg-png-studio .rs-progress-line span{overflow-wrap:anywhere}
-    #svg-png-studio .rs-result{margin-top:15px;padding:13px;background:#edf7f1;border:1px solid #cce4d4;border-radius:10px}
+    #svg-png-studio .rs-result{margin-top:15px;padding:13px;background:var(--selected);border:1px solid var(--line);border-radius:10px}
     #svg-png-studio .rs-result strong{font-size:12px;display:block;margin-bottom:4px}
-    #svg-png-studio .rs-result p{font-size:11px;color:var(--muted);margin-bottom:10px}
+    #svg-png-studio .rs-result p{font-size:11px;color:var(--muted-foreground);margin-bottom:10px}
     #svg-png-studio .rs-result .rs-btn{width:100%}
-    #svg-png-studio .rs-alert{background:#fffbf1;border:1px solid #ecdfba;border-radius:11px;padding:14px 16px;font-size:12px;overflow-wrap:anywhere;line-height:1.6}
+    #svg-png-studio .rs-alert{color:var(--notice-ink);background:var(--notice-bg);border:1px solid var(--notice-border);border-radius:11px;padding:14px 16px;font-size:12px;overflow-wrap:anywhere;line-height:1.6}
     #svg-png-studio .rs-alert h3{font-size:12px;margin-bottom:5px}
     #svg-png-studio .rs-alert ul{padding-left:18px;margin:7px 0;max-height:150px;overflow:auto;font-size:11px}
     #svg-png-studio .rs-alert .rs-btn{margin-top:9px}
     #svg-png-studio .rs-plan{margin-top:22px}
-    #svg-png-studio .rs-plan summary{cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 23px;list-style:none}
+    #svg-png-studio .rs-plan summary{cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;list-style:none}
     #svg-png-studio .rs-plan summary::-webkit-details-marker{display:none}
     #svg-png-studio .rs-plan-title{display:flex;gap:10px;align-items:center;font-weight:600;font-size:13px}
     #svg-png-studio .rs-plan[open] .rs-chevron{transform:rotate(180deg)}
-    #svg-png-studio .rs-plan-body{padding:0 23px 22px}
-    #svg-png-studio .rs-table-wrap{overflow:auto;max-height:290px;border:1px solid var(--line);border-radius:9px}
+    #svg-png-studio .rs-plan-body{padding:0 20px 20px}
+    #svg-png-studio .rs-table-wrap{overflow:auto;max-height:290px;border:1px solid var(--line);border-radius:8px}
     #svg-png-studio table{border-collapse:collapse;width:100%;font-size:11px;text-align:left}
-    #svg-png-studio th{font-size:10px;font-weight:600;color:var(--muted);background:#f6f8f8;position:sticky;top:0}
+    #svg-png-studio th{font-size:10px;font-weight:600;color:var(--muted-foreground);background:var(--surface);position:sticky;top:0}
     #svg-png-studio th,#svg-png-studio td{padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
     #svg-png-studio td:first-child{font-family:ui-monospace,SFMono-Regular,monospace;font-size:10px}
     #svg-png-studio tr:last-child td{border:0}
     #svg-png-studio .rs-foot{display:grid;grid-template-columns:repeat(3,1fr);gap:30px;padding:30px 5px}
     #svg-png-studio .rs-foot h3{font-size:12px;font-weight:600;margin-bottom:5px;display:flex;gap:8px;align-items:center}
-    #svg-png-studio .rs-foot p{font-size:11px;color:var(--muted);line-height:1.65}
-    #svg-png-studio .rs-bottom{display:flex;justify-content:space-between;align-items:center;gap:20px;border-top:1px solid var(--line);padding-top:19px;font-size:10px;color:var(--muted)}
-    #svg-png-studio dialog{border:1px solid var(--line);border-radius:16px;padding:0;width:min(580px,calc(100vw - 30px));max-height:90dvh;overflow:auto;color:var(--ink);box-shadow:0 20px 80px #0c30282b}
-    #svg-png-studio dialog::backdrop{background:#152d2866;backdrop-filter:blur(3px)}
+    #svg-png-studio .rs-foot p{font-size:11px;color:var(--muted-foreground);line-height:1.65}
+    #svg-png-studio .rs-bottom{display:flex;justify-content:space-between;align-items:center;gap:20px;border-top:1px solid var(--line);padding-top:19px;font-size:10px;color:var(--muted-foreground)}
+    #svg-png-studio dialog{border:1px solid var(--line);border-radius:16px;padding:0;width:min(580px,calc(100vw - 30px));max-height:90dvh;overflow:auto;color:var(--ink);box-shadow:0 20px 80px #00000033}
+    #svg-png-studio dialog::backdrop{background:#00000066;backdrop-filter:blur(3px)}
     #svg-png-studio .rs-dialog-body{padding:22px}
     #svg-png-studio textarea{min-height:210px;resize:vertical;font:12px/1.6 ui-monospace,SFMono-Regular,monospace!important;margin-top:12px}
     #svg-png-studio .rs-dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
-    #svg-png-studio .rs-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:white;border-radius:10px;padding:12px 19px;box-shadow:0 8px 30px #0002;z-index:10;font-size:12px;max-width:calc(100vw - 32px);width:max-content;white-space:normal}
+    #svg-png-studio .rs-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--accent);color:var(--accent-foreground);border-radius:10px;padding:12px 19px;box-shadow:0 8px 30px #0002;z-index:10;font-size:12px;max-width:calc(100vw - 32px);width:max-content;white-space:normal}
     #svg-png-studio .rs-busy{animation:rs-pulse 1.6s ease-in-out infinite}
     @keyframes rs-pulse{50%{opacity:.5}}
     @media(prefers-reduced-motion:reduce){#svg-png-studio *,#svg-png-studio *::before{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
-    @media(max-width:950px){#svg-png-studio{padding:0 24px 28px}#svg-png-studio .rs-workspace{grid-template-columns:minmax(0,1fr) 320px;gap:16px}#svg-png-studio .rs-hero-note{display:none}#svg-png-studio .rs-section,#svg-png-studio .rs-export{padding:18px}#svg-png-studio .rs-preview-stage{height:315px}#svg-png-studio .rs-card-head{padding:17px 19px}}
-    @media(max-width:730px){#svg-png-studio{padding:0 17px 25px}#svg-png-studio .rs-top{height:74px}#svg-png-studio .rs-brand small{display:none}#svg-png-studio .rs-hero{padding:30px 0 24px}#svg-png-studio h1{letter-spacing:-1.1px}#svg-png-studio .rs-lead{font-size:13px}#svg-png-studio .rs-workspace{grid-template-columns:1fr}#svg-png-studio .rs-drop{padding:24px 12px;margin:15px}#svg-png-studio .rs-preview-stage{height:280px;margin:0 15px}#svg-png-studio .rs-foot{grid-template-columns:1fr;gap:20px;padding:26px 3px}#svg-png-studio .rs-preview-art{max-width:75%;max-height:75%}#svg-png-studio .rs-preset-body{min-height:88px}#svg-png-studio .rs-bottom{align-items:start}#svg-png-studio .rs-private{font-size:10px}#svg-png-studio .rs-preview-head{gap:10px}#svg-png-studio .rs-select{max-width:190px}}
     @media(forced-colors:active){#svg-png-studio .rs-toggle{appearance:auto}#svg-png-studio .rs-toggle:before{display:none}#svg-png-studio .rs-preset input:checked+.rs-preset-body{outline:2px solid Highlight}}
+
+    #svg-png-studio .rs-text-btn{color:var(--ink)}
+    #svg-png-studio .rs-upload-glyph{color:var(--muted-foreground);background:var(--subtle);border:0;box-shadow:none}
+    #svg-png-studio .rs-drop:hover{border-color:var(--strong-border);background:var(--surface)}
+    #svg-png-studio .rs-preset input:checked+.rs-preset-body{background:var(--selected);border-color:var(--accent)}
+    #svg-png-studio .rs-toggle:before{background:var(--accent-foreground)}
+    #svg-png-studio .rs-segment input:checked+span{background:var(--paper)}
+    #svg-png-studio .rs-section:last-child{border-bottom:1px solid var(--line)}
+    #svg-png-studio .rs-file-name{font-weight:500}
+    #svg-png-studio .rs-foot{gap:20px;padding:24px 0}
+    #svg-png-studio .rs-foot h3{font-weight:500}
+    #svg-png-studio .rs-bottom{padding-top:16px}
+    #svg-png-studio .rs-preview-stage[data-tone=light]{background:#fff}
+    #svg-png-studio .rs-preview-stage[data-tone=dark]{background:#171717}
+    #svg-png-studio .rs-swatch-group .rs-checker{background-color:#fff;background-image:conic-gradient(#e5e5e5 25%,transparent 0 50%,#e5e5e5 0 75%,transparent 0)}
+    #svg-png-studio .rs-dialog-body{background:var(--paper)}
+    #svg-png-studio dialog{background:var(--paper)}
+    #svg-png-studio .rs-toggle:not(:checked):before{background:#fff}
+    #svg-png-studio .rs-plan-title{flex-wrap:wrap;font-weight:500}
+    html[data-embedded=true] #svg-png-studio dialog{position:fixed;top:calc(var(--host-visible-top,0px) + var(--host-visible-height,600px)/2);bottom:auto;left:0;right:0;margin:0 auto;transform:translateY(-50%);max-height:calc(var(--host-visible-height,600px) - 32px)}
+    html[data-embedded=true] #svg-png-studio .rs-toast{bottom:calc(var(--host-visible-bottom,0px) + 20px)}
+    @media(max-width:760px){#svg-png-studio .rs-workspace{grid-template-columns:minmax(0,1fr) 285px;gap:16px}#svg-png-studio .rs-section,#svg-png-studio .rs-export{padding:16px}#svg-png-studio .rs-card-head{padding:12px 16px}#svg-png-studio .rs-drop{margin:16px}#svg-png-studio .rs-preview-stage{margin:0 16px;height:270px}#svg-png-studio .rs-select{max-width:190px}}
+    @media(max-width:660px){#svg-png-studio{padding:16px}#svg-png-studio .rs-workspace{grid-template-columns:1fr}#svg-png-studio .rs-preview-stage{height:260px}#svg-png-studio .rs-drop{min-height:240px;padding:28px 12px}#svg-png-studio .rs-preview-head{gap:10px}#svg-png-studio .rs-foot{grid-template-columns:1fr;gap:16px;padding:24px 0}#svg-png-studio .rs-bottom{align-items:start}#svg-png-studio .rs-preset-body{min-height:88px}#svg-png-studio .rs-select{max-width:180px}#svg-png-studio .rs-plan summary{padding:16px}}
+
   </style>
 </head>
 <body>
@@ -235,44 +282,37 @@ https://www.w3.org/TR/appmanifest/#icon-masks
     <symbol id="rs-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
     <symbol id="rs-file" viewBox="0 0 24 24"><path d="M14 2H5v20h14V7l-5-5Zm0 0v5h5M8 12h8M8 16h5"/></symbol>
   </defs></svg>
-  <header class="rs-top">
-    <div class="rs-brand"><span class="rs-mark"><svg class="rs-icon" aria-hidden="true"><use href="#rs-layers"/></svg></span>Raster<span><small>SVG STUDIO</small></span></div>
-    <div class="rs-private"><span class="rs-dot"></span>Files stay on your device</div>
-  </header>
-  <section class="rs-hero" aria-labelledby="rs-title">
-    <div><div class="rs-eyebrow">SMALL DETAILS. EVERY PIXEL.</div><h1 id="rs-title">One SVG. Every size.</h1><p class="rs-lead">Turn your artwork into a complete PNG set.<br>Fine-tune once. Export for wherever it’s going.</p></div>
-    <span class="rs-hero-note">SVG → PNG + ZIP &nbsp; / &nbsp; No sign-up. No uploads.</span>
-  </section>
+  <h1 id="rs-title" class="rs-sr">SVG to PNG Set</h1>
   <noscript><p class="rs-alert">This tool needs JavaScript to process images locally. Enable JavaScript and reload this page.</p></noscript>
   <div class="rs-workspace">
     <div class="rs-left">
       <section class="rs-card" aria-labelledby="rs-source-heading">
-        <div class="rs-card-head"><h2 id="rs-source-heading">Your artwork</h2><span class="rs-count" id="rs-source-count">SVG files · up to 5 MB each</span></div>
+        <div class="rs-card-head"><h2 id="rs-source-heading">Source SVGs</h2><span class="rs-count" id="rs-source-count">SVG files · up to 5 MB each</span></div>
         <div class="rs-drop" id="rs-drop">
           <div class="rs-upload-glyph"><svg class="rs-icon" aria-hidden="true"><use href="#rs-upload"/></svg></div>
           <div class="rs-drop-title" id="rs-drop-title">Drop your SVG files here</div>
-          <p>Bring one icon or a whole collection. Up to 20 files.</p>
+          <p>Select up to 20 files · 5 MB per SVG</p>
           <div class="rs-drop-actions"><button class="rs-btn rs-btn-dark" id="rs-browse" type="button">Choose files</button><button class="rs-text-btn" id="rs-paste-open" type="button"><svg class="rs-icon" style="width:13px;height:13px;vertical-align:-2px;margin-right:4px" aria-hidden="true"><use href="#rs-code"/></svg>Paste SVG</button></div>
           <input type="file" id="rs-file-input" accept=".svg,image/svg+xml" multiple hidden>
         </div>
         <ul class="rs-file-list" id="rs-files" aria-label="Uploaded artwork"></ul>
-        <div class="rs-upload-bottom"><span id="rs-upload-note">Just exploring?</span><button class="rs-text-btn" id="rs-sample" type="button">Try a sample ↗</button><button class="rs-text-btn" id="rs-clear" type="button" hidden>Clear all</button></div>
+        <div class="rs-upload-bottom"><span id="rs-upload-note">Processing stays on your device.</span><button class="rs-text-btn" id="rs-sample" type="button">Try sample</button><button class="rs-text-btn" id="rs-clear" type="button" hidden>Clear all</button></div>
       </section>
       <div id="rs-alerts" class="rs-alert" role="status" hidden></div>
       <section class="rs-card" aria-labelledby="rs-preview-heading">
-        <div class="rs-card-head rs-preview-head" style="border:0"><h2 id="rs-preview-heading">Preview</h2><div class="rs-preview-controls"><select id="rs-preview-size" class="rs-select" aria-label="Preview output size"></select><div class="rs-swatch-group" aria-label="Preview backdrop"><button class="rs-swatch rs-checker" data-tone="grid" aria-label="Grid backdrop" aria-pressed="true" type="button"></button><button class="rs-swatch" style="background:white" data-tone="light" aria-label="Light backdrop" aria-pressed="false" type="button"></button><button class="rs-swatch" style="background:#202c33" data-tone="dark" aria-label="Dark backdrop" aria-pressed="false" type="button"></button></div></div></div>
+        <div class="rs-card-head rs-preview-head" style="border:0"><h2 id="rs-preview-heading">Preview</h2><div class="rs-preview-controls"><select id="rs-preview-size" class="rs-select" aria-label="Preview output size"></select><div class="rs-swatch-group" aria-label="Preview backdrop"><button class="rs-swatch rs-checker" data-tone="grid" aria-label="Grid backdrop" aria-pressed="true" type="button"></button><button class="rs-swatch" style="background:white" data-tone="light" aria-label="Light backdrop" aria-pressed="false" type="button"></button><button class="rs-swatch" style="background:#171717" data-tone="dark" aria-label="Dark backdrop" aria-pressed="false" type="button"></button></div></div></div>
         <div class="rs-preview-stage" id="rs-stage" data-tone="grid">
-          <div class="rs-empty-art" id="rs-preview-empty"><div class="rs-empty-grid" aria-hidden="true"><span class="rs-empty-tile"><svg class="rs-icon"><use href="#rs-spark"/></svg></span><span class="rs-empty-tile"><svg class="rs-icon" style="width:30px;height:30px"><use href="#rs-spark"/></svg></span><span class="rs-empty-tile"><svg class="rs-icon" style="width:16px;height:16px"><use href="#rs-spark"/></svg></span></div><span>Your next icon set starts here.</span></div>
+          <div class="rs-empty-art" id="rs-preview-empty"><div class="rs-empty-grid" aria-hidden="true"><span class="rs-empty-tile"><svg class="rs-icon"><use href="#rs-spark"/></svg></span><span class="rs-empty-tile"><svg class="rs-icon" style="width:30px;height:30px"><use href="#rs-spark"/></svg></span><span class="rs-empty-tile"><svg class="rs-icon" style="width:16px;height:16px"><use href="#rs-spark"/></svg></span></div><span>Add an SVG to preview your PNG output.</span></div>
           <img id="rs-preview-img" class="rs-preview-art" alt="" hidden>
         </div>
         <div class="rs-preview-bottom"><span class="rs-preview-caption" id="rs-preview-caption">Add an SVG to see your export.</span><button class="rs-text-btn" id="rs-download-png" type="button" disabled>Download PNG ↓</button></div>
       </section>
     </div>
     <aside class="rs-card" aria-labelledby="rs-settings-heading">
-      <div class="rs-card-head"><h2 id="rs-settings-heading">Make it yours</h2><button class="rs-text-btn" id="rs-reset" type="button" style="min-height:23px;padding:0 4px">Reset</button></div>
+      <div class="rs-card-head"><h2 id="rs-settings-heading">Export settings</h2><button class="rs-text-btn" id="rs-reset" type="button" style="min-height:23px;padding:0 4px">Reset</button></div>
       <fieldset class="rs-settings" id="rs-settings"><legend class="rs-sr">Export settings</legend>
         <div class="rs-section">
-          <div class="rs-label-row"><span class="rs-label" id="rs-preset-label"><span class="rs-step">01</span>Choose a destination</span></div>
+          <div class="rs-label-row"><span class="rs-label" id="rs-preset-label">Export preset</span></div>
           <div class="rs-presets" role="radiogroup" aria-labelledby="rs-preset-label">
             <label class="rs-preset"><input type="radio" name="rs-preset" value="web" checked><span class="rs-preset-body"><span class="rs-preset-top"><svg class="rs-icon" aria-hidden="true"><use href="#rs-globe"/></svg><span class="rs-radio-dot"></span></span><strong>Web</strong><small>Favicons + PWA</small></span></label>
             <label class="rs-preset"><input type="radio" name="rs-preset" value="apple"><span class="rs-preset-body"><span class="rs-preset-top"><svg class="rs-icon" aria-hidden="true"><use href="#rs-apple"/></svg><span class="rs-radio-dot"></span></span><strong>Apple</strong><small>iOS, iPadOS + macOS</small></span></label>
@@ -283,11 +323,11 @@ https://www.w3.org/TR/appmanifest/#icon-masks
           <p class="rs-help" id="rs-preset-help"></p>
         </div>
         <div class="rs-section">
-          <label class="rs-toggle-row" for="rs-trim"><span class="rs-toggle-copy"><span class="rs-label"><span class="rs-step">02</span>Trim empty space</span><small>Fit the canvas to the visible artwork.</small></span><input id="rs-trim" type="checkbox" class="rs-toggle" checked></label>
+          <label class="rs-toggle-row" for="rs-trim"><span class="rs-toggle-copy"><span class="rs-label">Trim empty space</span><small>Fit the canvas to the visible artwork.</small></span><input id="rs-trim" type="checkbox" class="rs-toggle" checked></label>
           <div class="rs-label-row" style="margin-bottom:4px"><label for="rs-padding" class="rs-label">Padding</label><output for="rs-padding" class="rs-value" id="rs-padding-value">10%</output></div><input id="rs-padding" type="range" class="rs-range" min="0" max="35" step="1" value="10" aria-describedby="rs-padding-help"><div class="rs-range-marks"><span>None</span><span>Balanced</span><span>Spacious</span></div><p class="rs-help" id="rs-padding-help">Inset on each side. Safe-zone outputs add platform protection.</p>
         </div>
         <div class="rs-section">
-          <div class="rs-label-row"><span class="rs-label" id="rs-bg-label"><span class="rs-step">03</span>Background</span></div>
+          <div class="rs-label-row"><span class="rs-label" id="rs-bg-label">Background</span></div>
           <div class="rs-segment" role="radiogroup" aria-labelledby="rs-bg-label"><label><input type="radio" name="rs-background" value="transparent" checked><span>Transparent</span></label><label><input type="radio" name="rs-background" value="solid"><span>Solid color</span></label></div>
           <div class="rs-color-row"><input type="color" id="rs-color" value="#ffffff" aria-label="Background color"><input class="rs-input rs-color-hex" id="rs-color-hex" value="#FFFFFF" maxlength="7" spellcheck="false" aria-label="Background hex color"><span class="rs-inline-label" id="rs-color-label">Opaque icon fill</span></div><p class="rs-help" id="rs-bg-help">Touch and maskable icons always use this solid color.</p>
         </div>
@@ -301,7 +341,7 @@ https://www.w3.org/TR/appmanifest/#icon-masks
   </div>
   <details class="rs-card rs-plan" id="rs-plan"><summary><span class="rs-plan-title"><svg class="rs-icon" aria-hidden="true"><use href="#rs-file"/></svg>Inside your export <span class="rs-count" id="rs-plan-count"></span></span><svg class="rs-icon rs-chevron" aria-hidden="true"><use href="#rs-chevron"/></svg></summary><div class="rs-plan-body"><div class="rs-table-wrap"><table><caption class="rs-sr">Output files for each SVG</caption><thead><tr><th scope="col">File</th><th scope="col">Pixels</th><th scope="col">Purpose</th></tr></thead><tbody id="rs-plan-rows"></tbody></table></div><p class="rs-help" id="rs-plan-note"></p></div></details>
   <section class="rs-foot" aria-label="How the tool works"><div><h3><svg class="rs-icon" aria-hidden="true"><use href="#rs-shield"/></svg>Private by design</h3><p>Your SVGs are processed on your device. Linked images or fonts are fetched only when you choose to load them.</p></div><div><h3><svg class="rs-icon" aria-hidden="true"><use href="#rs-size"/></svg>Made for the destination</h3><p>Exact pixel sizes, safe padding, and the supporting files you need to bring an icon set into your project.</p></div><div><h3><svg class="rs-icon" aria-hidden="true"><use href="#rs-layers"/></svg>Ready as a collection</h3><p>Each SVG gets its own folder. Export a single PNG, or keep the whole set together in one organized ZIP.</p></div></section>
-  <footer class="rs-bottom"><span>Raster · SVG to PNG Studio</span><button class="rs-text-btn" id="rs-about-open" type="button" style="padding:0;min-height:24px;font-size:10px">Rendering & privacy notes</button></footer>
+  <footer class="rs-bottom"><span>Files stay in your browser.</span><button class="rs-text-btn" id="rs-about-open" type="button" style="padding:0;min-height:24px;font-size:10px">Rendering & privacy notes</button></footer>
   <dialog id="rs-paste-dialog" aria-labelledby="rs-paste-heading"><div class="rs-card-head"><h2 id="rs-paste-heading">Paste your SVG</h2><button class="rs-icon-btn" type="button" data-close="rs-paste-dialog" aria-label="Close paste dialog"><svg class="rs-icon" aria-hidden="true"><use href="#rs-close"/></svg></button></div><form id="rs-paste-form" class="rs-dialog-body"><label class="rs-label" for="rs-paste-name">File name</label><input id="rs-paste-name" class="rs-input" value="artwork.svg" maxlength="100" style="margin-top:6px"><label class="rs-sr" for="rs-paste-text">SVG markup</label><textarea class="rs-input" id="rs-paste-text" spellcheck="false" placeholder="<svg viewBox=&quot;0 0 24 24&quot; …>…</svg>" required></textarea><p class="rs-help">Include any CSS your SVG needs inside a &lt;style&gt; block. Text converted to paths is the most portable.</p><div class="rs-dialog-actions"><button class="rs-btn" type="button" data-close="rs-paste-dialog">Cancel</button><button class="rs-btn rs-btn-dark" type="submit">Add artwork</button></div></form></dialog>
   <dialog id="rs-about-dialog" aria-labelledby="rs-about-heading"><div class="rs-card-head"><h2 id="rs-about-heading">A few useful details</h2><button class="rs-icon-btn" type="button" data-close="rs-about-dialog" aria-label="Close notes"><svg class="rs-icon" aria-hidden="true"><use href="#rs-close"/></svg></button></div><div class="rs-dialog-body"><p class="rs-label">Local from start to finish</p><p class="rs-help">No uploaded artwork, cookies, analytics, third-party scripts, or saved file history. Self-contained SVGs work offline. Loading linked assets contacts their hosts, without cookies or a referrer; those hosts can still see your IP address.</p><p class="rs-label" style="margin-top:18px">What renders best</p><p class="rs-help">Paths, gradients, embedded images, masks, filters, and internal styles are supported by your browser’s SVG renderer. Scripts, HTML foreignObject, animation, and unsupported active elements are removed and reported. SVGs that rely on website CSS must include those rules. Embedded fonts are retained, but font support and antialiasing vary by browser; outline text when exact typography matters.</p><p class="rs-label" style="margin-top:18px">Predictable exports</p><p class="rs-help">Trimming scans alpha at up to 2048 pixels, then renders the original vector again at each target size. Tiny or faint details may need trim turned off. Output dimensions stay exact; trimming changes the artwork framing. Up to 20 SVGs, 5 MiB each, 50 MiB total input, 4096 pixels per output side, and 128 MiB per ZIP. Heavy files are queued one at a time.</p><p class="rs-label" style="margin-top:18px">Platform bundles</p><p class="rs-help">Apple includes conventional iPhone/iPad and macOS raster AppIcon catalogs with opaque PNGs; it does not create layered Icon Composer appearances. Android includes legacy icons, transparent adaptive foregrounds, and XML resources. Web includes PNG favicons, a multi-size ICO, touch/PWA icons, a maskable icon, and manifest/HTML starter files. Review generated starter metadata before publishing.</p><p class="rs-help" id="rs-engine-note"></p><div class="rs-dialog-actions"><button class="rs-btn rs-btn-dark" type="button" data-close="rs-about-dialog">Got it</button></div></div></dialog>
   <div class="rs-sr" id="rs-live" aria-live="polite" aria-atomic="true"></div>
@@ -543,9 +583,9 @@ https://www.w3.org/TR/appmanifest/#icon-masks
       add('android/res/mipmap-anydpi-v26/ic_launcher.xml','<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n    <background android:drawable="@color/ic_launcher_background" />\n    <foreground android:drawable="@mipmap/ic_launcher_foreground" />\n</adaptive-icon>\n','application/xml');
       add('android/res/values/ic_launcher_colors.xml','<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">'+options.color+'</color>\n</resources>\n','application/xml');
     }
-    add('export-manifest.json',json({generator:'SVG to PNG Studio 1.0.0',source:file.name,preset:options.preset,paddingPerSide:options.padding/100,autoTrim:options.trim,background:options.background,color:options.color,trimScanMaxPixels:LIMIT.scan,outputs:plan.map(p=>({path:p.name,width:p.width,height:p.height,background:p.transparent?'transparent':p.opaque||options.background==='solid'?options.color:'transparent',safeCircleDiameter:p.safe||null})),notes:file.warnings}),'application/json');
+    add('export-manifest.json',json({generator:'SVG to PNG Set 1.0.0',source:file.name,preset:options.preset,paddingPerSide:options.padding/100,autoTrim:options.trim,background:options.background,color:options.color,trimScanMaxPixels:LIMIT.scan,outputs:plan.map(p=>({path:p.name,width:p.width,height:p.height,background:p.transparent?'transparent':p.opaque||options.background==='solid'?options.color:'transparent',safeCircleDiameter:p.safe||null})),notes:file.warnings}),'application/json');
     const specific=options.preset==='web'?'WEB\nCopy web/ to your public asset directory. Adjust the paths in head-snippet.html, and edit site.webmanifest name, id, start_url, scope, colors, and paths for your app. A manifest alone does not add offline behavior. The maskable PNG fits the artwork inside the central safe circle. favicon.ico contains PNG-backed 16, 32, and 48px images for modern clients.\n':options.preset==='apple'?'APPLE\nImport the relevant AppIcon.appiconset into your iOS or macOS Assets.xcassets catalog. Select AppIcon in the target settings. These are traditional raster assets with light/default artwork, not layered Icon Composer appearances, watchOS, tvOS, or visionOS assets. All PNGs are flattened to the chosen background. Xcode/App Store validation remains part of your app release process.\n':options.preset==='android'?'ANDROID\nMerge android/res/ into app/src/main/res/. Resolve existing resource-name conflicts before replacing files. Set android:icon="@mipmap/ic_launcher" on your application in AndroidManifest.xml. Adaptive foreground layers have a conservative 66dp safe circle within a 108dp canvas; the background comes from ic_launcher_colors.xml. Android selects the v26 adaptive resource where supported, and the legacy PNG on older versions. Monochrome themed icons require separately designed artwork and are not generated. play-store-icon.png is the 512px store asset.\n':'CUSTOM\nFiles in png/ have the exact requested dimensions, with artwork centered and contained without stretching.\n';
-    add('README.txt','SVG TO PNG STUDIO\n\n'+specific+'\nRENDERING\nEvery output is rasterized from the original vector at its target size. Trimming is estimated from an alpha scan up to 2048px; tiny details may be missed. Browser font rendering can vary. Use outlined text for portable typography. Review every final icon, especially small favicons, before release. PNG compression is lossless; embedded raster images cannot gain vector detail.\n\nSOURCE NOTES\n'+(file.warnings.length?file.warnings.map(w=>'- '+w).join('\n'):'No preprocessing warnings.')+'\n');
+    add('README.txt','SVG TO PNG SET\n\n'+specific+'\nRENDERING\nEvery output is rasterized from the original vector at its target size. Trimming is estimated from an alpha scan up to 2048px; tiny details may be missed. Browser font rendering can vary. Use outlined text for portable typography. Review every final icon, especially small favicons, before release. PNG compression is lossless; embedded raster images cannot gain vector detail.\n\nSOURCE NOTES\n'+(file.warnings.length?file.warnings.map(w=>'- '+w).join('\n'):'No preprocessing warnings.')+'\n');
     return files;
   }
 
@@ -760,7 +800,7 @@ https://www.w3.org/TR/appmanifest/#icon-masks
     setText('source-count',state.files.length?state.files.length+' / 20 SVG files':'SVG files · up to 5 MB each');
     setText('drop-title',state.files.length?'Add more SVG artwork':'Drop your SVG files here');
     $('clear').hidden=!state.files.length;$('sample').hidden=Boolean(state.files.length);
-    setText('upload-note',state.files.length?'Select a file to preview it.':'Just exploring?');
+    setText('upload-note',state.files.length?'Select a file to preview it.':'Processing stays on your device.');
   }
   function drawAlerts() {
     const alerts=$('alerts');alerts.replaceChildren();
@@ -959,3 +999,4 @@ https://www.w3.org/TR/appmanifest/#icon-masks
 </script>
 </body>
 </html>
+
