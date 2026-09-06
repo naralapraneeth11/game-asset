@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SVG to PNG Studio</title>
+  <style>html,body{margin:0;height:100%;background:#f6f7f9;font:14px/1.5 system-ui,sans-serif;color:#17232b}</style>
+</head>
+<body>
+  <p id="status" style="padding:24px">Loading SVG to PNG Studio…</p>
+  <script>
+  (async function () {
+    var status = document.getElementById('status');
+    try {
+      var parts = await Promise.all([
+        fetch('/svg-studio-part1.txt').then(function (r) {
+          if (!r.ok) throw new Error('part1 ' + r.status);
+          return r.text();
+        }),
+        fetch('/svg-studio-part2.txt').then(function (r) {
+          if (!r.ok) throw new Error('part2 ' + r.status);
+          return r.text();
+        })
+      ]);
+      var html = parts[0] + parts[1];
+      document.open('text/html');
+      document.write(html);
+      document.close();
+    } catch (e) {
+      status.textContent = 'Failed to load studio: ' + (e && e.message ? e.message : e);
+      status.style.color = '#ab3b32';
+    }
+  })();
+  </script>
+</body>
+</html>
