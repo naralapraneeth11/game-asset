@@ -12,17 +12,20 @@
   (async function () {
     var status = document.getElementById('status');
     try {
-      var parts = await Promise.all([
-        fetch('/svg-studio-part1.txt').then(function (r) {
-          if (!r.ok) throw new Error('part1 ' + r.status);
+      var urls = [
+        '/svg-studio-chunk-0.txt',
+        '/svg-studio-chunk-1.txt',
+        '/svg-studio-chunk-2.txt',
+        '/svg-studio-chunk-3.txt',
+        '/svg-studio-chunk-4.txt'
+      ];
+      var parts = await Promise.all(urls.map(function (u) {
+        return fetch(u).then(function (r) {
+          if (!r.ok) throw new Error(u + ' ' + r.status);
           return r.text();
-        }),
-        fetch('/svg-studio-part2.txt').then(function (r) {
-          if (!r.ok) throw new Error('part2 ' + r.status);
-          return r.text();
-        })
-      ]);
-      var html = parts[0] + parts[1];
+        });
+      }));
+      var html = parts.join('');
       document.open('text/html');
       document.write(html);
       document.close();
