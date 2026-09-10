@@ -3,10 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "node src/tools/image-compressor/scripts/prepare.mjs && next dev",
+    "build": "node src/tools/image-compressor/scripts/prepare.mjs && next build && node src/tools/image-compressor/scripts/offline-manifest.mjs",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "prepare:image-compressor": "node src/tools/image-compressor/scripts/prepare.mjs",
+    "test:image-compressor": "node src/tools/image-compressor/scripts/prepare.mjs && node --test src/tools/image-compressor/tests/*.test.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -15,7 +17,13 @@
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "tailwind-merge": "^2.6.0"
+    "tailwind-merge": "^2.6.0",
+    "@jsquash/avif": "2.1.1",
+    "@jsquash/jpeg": "1.6.0",
+    "@jsquash/jxl": "1.3.0",
+    "@jsquash/oxipng": "2.3.0",
+    "@jsquash/webp": "1.5.0",
+    "fflate": "0.8.2"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
