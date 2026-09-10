@@ -9,6 +9,7 @@ import {
   Grid3X3,
   Package,
   FileImage,
+  ImageDown,
   Sun,
   Moon,
   Monitor,
@@ -47,6 +48,12 @@ const tools = [
     description: "Web · Apple · Android icons",
     icon: FileImage,
     href: "/tools/svg-png-set",
+  },
+  {
+    name: "Image Compressor",
+    description: "JPEG · PNG · WebP · AVIF · Local",
+    icon: ImageDown,
+    href: "/tools/image-compressor",
   },
 ] as const;
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Scaling, Box, Grid3X3, Package, FileImage, Shield } from "lucide-react";
+import { ArrowRight, Scaling, Box, Grid3X3, Package, FileImage, ImageDown, Shield } from "lucide-react";
 
 const tools = [
   {
@@ -31,6 +31,12 @@ const tools = [
     description: "Web · Apple · Android · Favicons · App icons · Local",
     href: "/tools/svg-png-set",
     icon: FileImage,
+  },
+  {
+    name: "Image Compressor",
+    description: "JPEG · PNG · WebP · AVIF · Local batch compress",
+    href: "/tools/image-compressor",
+    icon: ImageDown,
   },
 ];
 
