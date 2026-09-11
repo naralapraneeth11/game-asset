@@ -1,5 +1,5 @@
-import { assertGeometry, fit, LIMITS, MIME, searchQuality, validateSettings } from "./core.js";
-import type { Format, Result, WorkerRequest, WorkerResponse } from "./core.js";
+import { assertGeometry, outputGeometry, LIMITS, MIME, searchQuality, validateSettings } from "./core.js";
+import type { Result, WorkerRequest, WorkerResponse } from "./core.js";
 import { filterPng, inspect } from "./headers.js";
 
 // The preparation script publishes this module and pinned codecs under one versioned path.
@@ -22,14 +22,13 @@ scope.onmessage = async ({ data: request }) => {
     const maxPixels = Math.min(16_000_000, Math.max(1, request.maxPixels || LIMITS.pixels));
     phase("Checking image");
     const input = await file.arrayBuffer(), header = inspect(new Uint8Array(input));
-    assertGeometry(header.width, header.height, maxPixels);
-    const warnings: string[] = [];
     const oriented = header.orientation >= 5 ? { width: header.height, height: header.width } : header;
-    let size = fit(oriented.width, oriented.height, settings.maxWidth, settings.maxHeight);
+    let size = outputGeometry(oriented.width, oriented.height, settings, maxPixels);
     const originalPng = header.format === "png" && settings.format === "png" && header.orientation === 1 && size.width === header.width && size.height === header.height;
     if (settings.preservePngMetadata && !originalPng) throw new Error("Metadata preservation requires PNG to PNG with original dimensions and orientation. Disable it for conversion or resizing.");
     if (header.bitDepth > 8 && !originalPng) throw new Error("This image exceeds 8 bits per channel. Use original-size PNG optimization or a high-bit-depth editor.");
     let buffer: ArrayBuffer, selectedQuality: number | null = settings.quality, targetMet = true;
+    const warnings: string[] = [];
     phase("Loading encoder");
     if (originalPng) {
       const { default: optimise } = await codec("oxipng", "optimise");
@@ -44,9 +43,7 @@ scope.onmessage = async ({ data: request }) => {
       if (typeof OffscreenCanvas === "undefined" || typeof createImageBitmap === "undefined") throw new Error("This browser needs worker image decoding and OffscreenCanvas. Try a current Chrome, Firefox, Edge or Safari.");
       phase("Decoding image");
       bitmap = await createImageBitmap(new Blob([input], { type: MIME[header.format] }), { imageOrientation: "from-image", colorSpaceConversion: "default" });
-      assertGeometry(bitmap.width, bitmap.height, maxPixels);
-      size = fit(bitmap.width, bitmap.height, settings.maxWidth, settings.maxHeight);
-      assertGeometry(size.width, size.height, maxPixels);
+      size = outputGeometry(bitmap.width, bitmap.height, settings, maxPixels);
       canvas = new OffscreenCanvas(size.width, size.height);
       const ctx = canvas.getContext("2d", { colorSpace: "srgb", willReadFrequently: true });
       if (!ctx) throw new Error("A 2D image canvas could not be created.");
@@ -104,3 +101,7 @@ scope.onmessage = async ({ data: request }) => {
     scope.postMessage({ id, type: "error", message: /fetch|import|wasm|compile/i.test(message) ? `${message} Check that the self-hosted codec assets are present; reconnect if they have not been cached.` : message });
   } finally { bitmap?.close(); if (canvas) { canvas.width = 1; canvas.height = 1; } busy = false; }
 };
+
+
+// A startup handshake distinguishes loading failures from failures after a job begins.
+scope.postMessage({ type: "ready", version: "v2" });
