@@ -2,13 +2,13 @@ export type Format = "jpeg" | "png" | "webp" | "avif" | "jxl";
 export type Settings = {
   format: Format; quality: number; targetKB: number; minQuality: number;
   maxWidth: number; maxHeight: number; matte: string;
-  effort: "fast" | "balanced" | "thorough"; preservePngMetadata: boolean;
+  effort: "fast" | "balanced" | "thorough"; preservePngMetadata: boolean; autoResize: boolean;
 };
 export const DEFAULTS: Settings = {
   format: "webp", quality: 80, targetKB: 0, minQuality: 35,
-  maxWidth: 0, maxHeight: 0, matte: "#ffffff", effort: "balanced", preservePngMetadata: false,
+  maxWidth: 0, maxHeight: 0, matte: "#ffffff", effort: "balanced", preservePngMetadata: false, autoResize: true,
 };
-export const LIMITS = { file: 20_000_000, files: 100, batch: 200 * 1024 ** 2, output: 200 * 1024 ** 2, axis: 8000, pixels: 8_000_000, timeout: 120_000 };
+export const LIMITS = { file: 20_000_000, files: 100, batch: 200 * 1024 ** 2, output: 200 * 1024 ** 2, axis: 8000, sourceAxis: 16384, sourcePixels: 32_000_000, safeAxis: 4096, pixels: 8_000_000, timeout: 120_000 };
 export const MIME: Record<Format, string> = { jpeg: "image/jpeg", png: "image/png", webp: "image/webp", avif: "image/avif", jxl: "image/jxl" };
 export const EXT: Record<Format, string> = { jpeg: "jpg", png: "png", webp: "webp", avif: "avif", jxl: "jxl" };
 export type Header = { format: Exclude<Format, "jxl">; width: number; height: number; bitDepth: number; orientation: number; animated: boolean; hdr: boolean };
@@ -18,7 +18,7 @@ export type Result = {
   elapsed: number; targetMet: boolean; warnings: string[]; pixelPreserving: boolean;
 };
 export type WorkerRequest = { id: string; file: File; settings: Settings; maxPixels: number };
-export type WorkerResponse = { id: string; type: "phase"; phase: string } | { id: string; type: "result"; result: Result } | { id: string; type: "error"; message: string };
+export type WorkerResponse = { type: "ready"; version: string } | { id: string; type: "phase"; phase: string } | { id: string; type: "result"; result: Result } | { id: string; type: "error"; message: string };
 
 export function validateSettings(value: Settings): Settings {
   if (!Object.hasOwn(MIME, value.format)) throw new Error("Choose a supported output format.");
@@ -30,7 +30,7 @@ export function validateSettings(value: Settings): Settings {
   if (!/^#[0-9a-f]{6}$/i.test(value.matte)) throw new Error("Enter a six-digit background color.");
   if (!["fast", "balanced", "thorough"].includes(value.effort)) throw new Error("Choose a valid effort.");
   if (value.targetKB && value.format === "png") throw new Error("Target size applies to lossy formats. PNG optimization preserves pixels.");
-  return { ...value, preservePngMetadata: !!value.preservePngMetadata };
+  return { ...value, preservePngMetadata: !!value.preservePngMetadata, autoResize: value.autoResize !== false };
 }
 export function fit(width: number, height: number, maxWidth: number, maxHeight: number) {
   const scale = Math.min(1, maxWidth > 0 ? maxWidth / width : 1, maxHeight > 0 ? maxHeight / height : 1);
@@ -41,6 +41,29 @@ export function assertGeometry(width: number, height: number, maxPixels: number)
   if (width > LIMITS.axis || height > LIMITS.axis || width * height > maxPixels) {
     throw new Error(`Image is ${width} × ${height}. This session supports up to ${Math.round(maxPixels / 1e6)} MP and 8000 px per side. Resize it first.`);
   }
+}
+/** Separate source admission from the working bitmap/canvas budget. */
+export function outputGeometry(width: number, height: number, settings: Settings, maxPixels: number) {
+  if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1) throw new Error("Invalid image dimensions.");
+  if (width > LIMITS.sourceAxis || height > LIMITS.sourceAxis || width * height > LIMITS.sourcePixels) {
+    throw new Error(`Source is ${width} × ${height}. This browser workflow accepts up to 32 MP and 16384 px per side. Resize this source in an image editor first.`);
+  }
+  let output = fit(width, height, settings.maxWidth, settings.maxHeight);
+  // Explicit metadata preservation must never silently resize source pixels.
+  if (settings.autoResize && !settings.preservePngMetadata) {
+    const scale = Math.min(1, LIMITS.safeAxis / output.width, LIMITS.safeAxis / output.height, Math.sqrt(maxPixels / (output.width * output.height)));
+    output = { width: Math.max(1, Math.floor(output.width * scale)), height: Math.max(1, Math.floor(output.height * scale)) };
+  }
+  if (output.width > LIMITS.axis || output.height > LIMITS.axis || output.width * output.height > maxPixels) {
+    throw new Error(`Requested output is ${output.width} × ${output.height}. Turn on “Fit large images safely” or set a smaller width/height. This session's working limit is ${Math.round(maxPixels / 1e6)} MP. To resize, turn off original PNG metadata preservation.`);
+  }
+  return output;
+}
+/** Count distinct retained outputs and generated comparison images, excluding the input File. */
+export function retainedBytes(result: Result) {
+  const blobs = new Set<Blob>([result.blob, result.preview]);
+  if (!(result.reference instanceof File)) blobs.add(result.reference);
+  return [...blobs].reduce((sum, blob) => sum + blob.size, 0);
 }
 export function bytes(n: number) { return n < 1000 ? `${n} B` : n < 1e6 ? `${(n / 1000).toFixed(1)} KB` : `${(n / 1e6).toFixed(2)} MB`; }
 export function savings(before: number, after: number) { return before > 0 ? (1 - after / before) * 100 : 0; }
