@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "prepare:image-compressor": "node src/tools/image-compressor/scripts/prepare.mjs",
-    "test:image-compressor": "node src/tools/image-compressor/scripts/prepare.mjs && node --test src/tools/image-compressor/tests/*.test.mjs"
+    "test:image-compressor": "node src/tools/image-compressor/scripts/prepare.mjs && node --test src/tools/image-compressor/tests/*.test.mjs",
+    "postinstall": "node src/tools/image-compressor/scripts/prepare.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
