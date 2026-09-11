@@ -6,7 +6,7 @@ import ts from 'typescript';
 const require = createRequire(import.meta.url);
 const tool = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const root = path.resolve(tool, '../../..');
-const version = 'v1';
+const version = 'v2';
 const output = path.join(root, 'public/tools/image-compressor', version);
 const pins = { jpeg: '1.6.0', webp: '1.5.0', avif: '2.1.1', oxipng: '2.3.0', jxl: '1.3.0' };
 await fs.mkdir(output, { recursive: true });
@@ -44,6 +44,7 @@ for (const filename of ['core.ts', 'headers.ts', 'compress.worker.ts']) {
   const result = ts.transpileModule(await fs.readFile(path.join(tool, 'engine', filename), 'utf8'), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022, isolatedModules: true }, fileName: filename });
   await write(filename.replace('.ts', '.js'), result.outputText);
 }
+await write('package.json', JSON.stringify({ private: true, type: 'module' }));
 await write('codec-versions.json', JSON.stringify({ version, codecs: pins, imagePersistence: false, threading: 'single', generatedAt: new Date().toISOString() }, null, 2));
 await fs.writeFile(path.join(root, 'public/tools/image-compressor/assets.json'), JSON.stringify({ version, assets }, null, 2));
 await fs.copyFile(path.join(tool, 'engine/offline-sw.js'), path.join(root, 'public/image-compressor-sw.js'));
