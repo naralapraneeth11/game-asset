@@ -17,10 +17,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: {
     default: "Game Asset Toolkit",
-    template: "%s \u00b7 Game Asset Toolkit",
+    template: "%s · Game Asset Toolkit",
   },
   description:
-    "Fast, local-first asset pipeline for game developers. 1x/2x/3x scaling, sprite tools, and more. Files never leave your browser.",
+    "Fast, local-first asset pipeline for game developers. 1x/2x/3x scaling, sprite tools, image compression and more. Files never leave your browser.",
   keywords: [
     "game asset converter",
     "1x 2x 3x converter",
@@ -29,6 +29,8 @@ export const metadata: Metadata = {
     "pixel art scaler",
     "local image converter",
     "Retina assets",
+    "image compressor",
+    "sprite packer",
   ],
 };
 
@@ -63,7 +65,7 @@ export default function RootLayout({
         <ThemeProvider>
           <div className="min-h-screen bg-background">
             <Sidebar />
-            <div className="md:pl-60">
+            <div className="md:pl-64">
               {children}
             </div>
           </div>
