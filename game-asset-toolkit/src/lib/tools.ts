@@ -5,10 +5,23 @@ import {
   Package,
   FileImage,
   ImageDown,
+  Braces,
+  ShieldCheck,
+  KeyRound,
+  Binary,
+  Link2,
+  Fingerprint,
+  Regex,
+  Shuffle,
+  Clock3,
+  Palette,
+  LockKeyhole,
   type LucideIcon,
 } from "lucide-react";
 
 export type ToolCategory = "image" | "3d" | "sprite" | "developer";
+export type DeveloperGroup = "Formatters" | "Encoding" | "Security & Tokens" | "Generators" | "Utilities";
+export const developerGroups: DeveloperGroup[] = ["Formatters", "Encoding", "Security & Tokens", "Generators", "Utilities"];
 
 export interface Tool {
   id: string;
@@ -21,9 +34,11 @@ export interface Tool {
   keywords: string[];
   suggested?: boolean;
   isNew?: boolean;
+  group?: DeveloperGroup;
 }
 
 export const tools: Tool[] = [
+  // Image
   {
     id: "image-scaler",
     name: "1x / 2x / 3x Image Scaler",
@@ -56,6 +71,7 @@ export const tools: Tool[] = [
     category: "image",
     keywords: ["svg", "png", "icon", "favicon", "apple", "android", "export"],
   },
+  // Sprite
   {
     id: "sprite-packer",
     name: "Sprite Packer",
@@ -77,6 +93,7 @@ export const tools: Tool[] = [
     category: "sprite",
     keywords: ["batch", "export", "folder", "preset", "ci", "automation"],
   },
+  // 3D
   {
     id: "3d-converter",
     name: "3D Converter",
@@ -88,6 +105,146 @@ export const tools: Tool[] = [
     keywords: ["3d", "obj", "stl", "gltf", "glb", "usd", "usdz", "convert", "model"],
     suggested: true,
   },
+  // Developer - Formatters
+  {
+    id: "json-formatter",
+    name: "JSON Formatter",
+    shortName: "JSON Formatter",
+    description: "Beautify, minify, validate and explore JSON locally",
+    href: "/tools/dev/json-formatter",
+    icon: Braces,
+    category: "developer",
+    group: "Formatters",
+    keywords: ["json", "formatter", "beautify", "minify", "pretty", "validate"],
+    suggested: true,
+    isNew: true,
+  },
+  {
+    id: "json-validator",
+    name: "JSON Validator",
+    shortName: "JSON Validator",
+    description: "Validate JSON with clear error messages and line numbers",
+    href: "/tools/dev/json-validator",
+    icon: ShieldCheck,
+    category: "developer",
+    group: "Formatters",
+    keywords: ["json", "validate", "validator", "schema", "error"],
+    isNew: true,
+  },
+  // Developer - Encoding
+  {
+    id: "base64",
+    name: "Base64 Encode / Decode",
+    shortName: "Base64",
+    description: "Text, files and images · URL-safe · Data URI",
+    href: "/tools/dev/base64",
+    icon: Binary,
+    category: "developer",
+    group: "Encoding",
+    keywords: ["base64", "encode", "decode", "data uri", "binary"],
+    suggested: true,
+    isNew: true,
+  },
+  {
+    id: "url-encode",
+    name: "URL Encode / Decode",
+    shortName: "URL Encode",
+    description: "Encode and decode URL components safely",
+    href: "/tools/dev/url-encode",
+    icon: Link2,
+    category: "developer",
+    group: "Encoding",
+    keywords: ["url", "encode", "decode", "percent", "uri"],
+    isNew: true,
+  },
+  // Developer - Security
+  {
+    id: "jwt-decoder",
+    name: "JWT Decoder",
+    shortName: "JWT Decoder",
+    description: "Decode, inspect and verify JSON Web Tokens locally",
+    href: "/tools/dev/jwt-decoder",
+    icon: KeyRound,
+    category: "developer",
+    group: "Security & Tokens",
+    keywords: ["jwt", "token", "decode", "jwt.io", "claims"],
+    suggested: true,
+    isNew: true,
+  },
+  {
+    id: "hash-generator",
+    name: "Hash Generator",
+    shortName: "Hash Generator",
+    description: "MD5, SHA-1, SHA-256, SHA-384, SHA-512 · Files supported",
+    href: "/tools/dev/hash-generator",
+    icon: Fingerprint,
+    category: "developer",
+    group: "Security & Tokens",
+    keywords: ["hash", "md5", "sha", "checksum", "digest"],
+    isNew: true,
+  },
+  {
+    id: "password-generator",
+    name: "Password Generator",
+    shortName: "Password",
+    description: "Cryptographically secure passwords with Web Crypto",
+    href: "/tools/dev/password-generator",
+    icon: LockKeyhole,
+    category: "developer",
+    group: "Security & Tokens",
+    keywords: ["password", "generator", "secure", "random"],
+    isNew: true,
+  },
+  // Developer - Generators
+  {
+    id: "uuid-generator",
+    name: "UUID Generator",
+    shortName: "UUID",
+    description: "Generate UUID v4 values in bulk",
+    href: "/tools/dev/uuid-generator",
+    icon: Shuffle,
+    category: "developer",
+    group: "Generators",
+    keywords: ["uuid", "guid", "v4", "generate", "random"],
+    isNew: true,
+  },
+  {
+    id: "timestamp",
+    name: "Timestamp Converter",
+    shortName: "Timestamp",
+    description: "Unix timestamp ↔ human-readable date",
+    href: "/tools/dev/timestamp",
+    icon: Clock3,
+    category: "developer",
+    group: "Generators",
+    keywords: ["timestamp", "unix", "epoch", "date", "time"],
+    isNew: true,
+  },
+  // Developer - Utilities
+  {
+    id: "regex-tester",
+    name: "Regex Tester",
+    shortName: "Regex Tester",
+    description: "Live matching, groups, replace and highlighting",
+    href: "/tools/dev/regex-tester",
+    icon: Regex,
+    category: "developer",
+    group: "Utilities",
+    keywords: ["regex", "regexp", "test", "match", "replace"],
+    isNew: true,
+  },
+  {
+    id: "color-converter",
+    name: "Color Converter",
+    shortName: "Color",
+    description: "HEX ↔ RGB ↔ HSL ↔ OKLCH with live preview",
+    href: "/tools/dev/color-converter",
+    icon: Palette,
+    category: "developer",
+    group: "Utilities",
+    keywords: ["color", "hex", "rgb", "hsl", "oklch", "convert"],
+    isNew: true,
+  },
 ];
 
 export const categories: {
@@ -98,7 +255,7 @@ export const categories: {
   { id: "image", label: "Image Tools", description: "Scale, compress, convert" },
   { id: "sprite", label: "Sprite Tools", description: "Pack, export, atlas" },
   { id: "3d", label: "3D Tools", description: "Convert models" },
-  { id: "developer", label: "Developer Tools", description: "JSON, Base64, JWT..." },
+  { id: "developer", label: "Developer Tools", description: "JSON, JWT, Base64, Hash..." },
 ];
 
 export function getSuggestedTools() {
@@ -107,6 +264,10 @@ export function getSuggestedTools() {
 
 export function getToolsByCategory(category: ToolCategory) {
   return tools.filter((t) => t.category === category);
+}
+
+export function getDeveloperToolsByGroup(group: DeveloperGroup) {
+  return tools.filter((t) => t.category === "developer" && t.group === group);
 }
 
 export function searchTools(query: string) {
@@ -123,4 +284,8 @@ export function searchTools(query: string) {
 
 export function getToolByHref(href: string) {
   return tools.find((t) => t.href === href);
+}
+
+export function getDeveloperTools() {
+  return tools.filter((t) => t.category === "developer");
 }
