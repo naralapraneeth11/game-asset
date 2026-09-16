@@ -1,11 +1,8 @@
-import { Metadata } from "next";
-import { UrlEncodeClient } from "./UrlEncodeClient";
+import UrlTool from "@/tools/developer/url/UrlTool";
+import { developerMetadata } from "@/lib/dev/metadata";
 
-export const metadata: Metadata = {
-  title: "URL Encode / Decode",
-  description: "Encode and decode URL components locally.",
-};
+export const metadata = developerMetadata("url-encode");
 
 export default function Page() {
-  return <UrlEncodeClient />;
+  return <UrlTool />;
 }

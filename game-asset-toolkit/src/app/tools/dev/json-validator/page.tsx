@@ -1,11 +1,8 @@
-import { Metadata } from "next";
-import { JsonValidatorClient } from "./JsonValidatorClient";
+import JsonTool from "@/tools/developer/json/JsonTool";
+import { developerMetadata } from "@/lib/dev/metadata";
 
-export const metadata: Metadata = {
-  title: "JSON Validator",
-  description: "Validate JSON with clear error messages. Runs entirely in your browser.",
-};
+export const metadata = developerMetadata("json-validator");
 
 export default function Page() {
-  return <JsonValidatorClient />;
+  return <JsonTool validatorOnly />;
 }

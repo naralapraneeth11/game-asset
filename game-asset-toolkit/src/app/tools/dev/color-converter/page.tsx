@@ -1,11 +1,8 @@
-import { Metadata } from "next";
-import { ColorClient } from "./ColorClient";
+import ColorTool from "@/tools/developer/color/ColorTool";
+import { developerMetadata } from "@/lib/dev/metadata";
 
-export const metadata: Metadata = {
-  title: "Color Converter",
-  description: "Convert between HEX, RGB and HSL colors.",
-};
+export const metadata = developerMetadata("color-converter");
 
 export default function Page() {
-  return <ColorClient />;
+  return <ColorTool />;
 }

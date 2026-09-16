@@ -1,12 +1,8 @@
-import { Metadata } from "next";
-import { JwtDecoderClient } from "./JwtDecoderClient";
+import JwtTool from "@/tools/developer/jwt/JwtTool";
+import { developerMetadata } from "@/lib/dev/metadata";
 
-export const metadata: Metadata = {
-  title: "JWT Decoder",
-  description:
-    "Decode and inspect JSON Web Tokens locally in your browser. Private and secure.",
-};
+export const metadata = developerMetadata("jwt-decoder");
 
-export default function JwtDecoderPage() {
-  return <JwtDecoderClient />;
+export default function Page() {
+  return <JwtTool />;
 }

@@ -1,11 +1,8 @@
-import { Metadata } from "next";
-import { RegexClient } from "./RegexClient";
+import RegexTool from "@/tools/developer/regex/RegexTool";
+import { developerMetadata } from "@/lib/dev/metadata";
 
-export const metadata: Metadata = {
-  title: "Regex Tester",
-  description: "Test regular expressions with live matching.",
-};
+export const metadata = developerMetadata("regex-tester");
 
 export default function Page() {
-  return <RegexClient />;
+  return <RegexTool />;
 }

@@ -1,11 +1,8 @@
-import { Metadata } from "next";
-import { Base64Client } from "./Base64Client";
+import Base64Tool from "@/tools/developer/base64/Base64Tool";
+import { developerMetadata } from "@/lib/dev/metadata";
 
-export const metadata: Metadata = {
-  title: "Base64 Encode / Decode",
-  description: "Encode and decode Base64 text and files locally in your browser.",
-};
+export const metadata = developerMetadata("base64");
 
 export default function Page() {
-  return <Base64Client />;
+  return <Base64Tool />;
 }

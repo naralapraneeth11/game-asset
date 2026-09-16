@@ -1,11 +1,8 @@
-import { Metadata } from "next";
-import { PasswordClient } from "./PasswordClient";
+import PasswordTool from "@/tools/developer/password/PasswordTool";
+import { developerMetadata } from "@/lib/dev/metadata";
 
-export const metadata: Metadata = {
-  title: "Password Generator",
-  description: "Generate secure passwords using Web Crypto.",
-};
+export const metadata = developerMetadata("password-generator");
 
 export default function Page() {
-  return <PasswordClient />;
+  return <PasswordTool />;
 }

@@ -1,12 +1,8 @@
-import { Metadata } from "next";
-import { JsonFormatterClient } from "./JsonFormatterClient";
+import JsonTool from "@/tools/developer/json/JsonTool";
+import { developerMetadata } from "@/lib/dev/metadata";
 
-export const metadata: Metadata = {
-  title: "JSON Formatter",
-  description:
-    "Beautify, minify and validate JSON locally in your browser. Private, fast, no upload.",
-};
+export const metadata = developerMetadata("json-formatter");
 
-export default function JsonFormatterPage() {
-  return <JsonFormatterClient />;
+export default function Page() {
+  return <JsonTool />;
 }

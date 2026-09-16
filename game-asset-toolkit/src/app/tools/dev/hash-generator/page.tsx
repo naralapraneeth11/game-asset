@@ -1,11 +1,8 @@
-import { Metadata } from "next";
-import { HashClient } from "./HashClient";
+import HashTool from "@/tools/developer/hash/HashTool";
+import { developerMetadata } from "@/lib/dev/metadata";
 
-export const metadata: Metadata = {
-  title: "Hash Generator",
-  description: "Generate MD5, SHA-1, SHA-256, SHA-384, SHA-512 hashes locally.",
-};
+export const metadata = developerMetadata("hash-generator");
 
 export default function Page() {
-  return <HashClient />;
+  return <HashTool />;
 }
