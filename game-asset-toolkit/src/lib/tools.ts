@@ -38,7 +38,6 @@ export interface Tool {
 }
 
 export const tools: Tool[] = [
-  // Image
   {
     id: "image-scaler",
     name: "1x / 2x / 3x Image Scaler",
@@ -71,7 +70,6 @@ export const tools: Tool[] = [
     category: "image",
     keywords: ["svg", "png", "icon", "favicon", "apple", "android", "export"],
   },
-  // Sprite
   {
     id: "sprite-packer",
     name: "Sprite Packer",
@@ -93,7 +91,6 @@ export const tools: Tool[] = [
     category: "sprite",
     keywords: ["batch", "export", "folder", "preset", "ci", "automation"],
   },
-  // 3D
   {
     id: "3d-converter",
     name: "3D Converter",
@@ -105,7 +102,6 @@ export const tools: Tool[] = [
     keywords: ["3d", "obj", "stl", "gltf", "glb", "usd", "usdz", "convert", "model"],
     suggested: true,
   },
-  // Developer - Formatters
   {
     id: "json-formatter",
     name: "JSON Formatter",
@@ -131,7 +127,6 @@ export const tools: Tool[] = [
     keywords: ["json", "validate", "validator", "schema", "error"],
     isNew: true,
   },
-  // Developer - Encoding
   {
     id: "base64",
     name: "Base64 Encode / Decode",
@@ -157,7 +152,6 @@ export const tools: Tool[] = [
     keywords: ["url", "encode", "decode", "percent", "uri"],
     isNew: true,
   },
-  // Developer - Security
   {
     id: "jwt-decoder",
     name: "JWT Decoder",
@@ -195,7 +189,6 @@ export const tools: Tool[] = [
     keywords: ["password", "generator", "secure", "random"],
     isNew: true,
   },
-  // Developer - Generators
   {
     id: "uuid-generator",
     name: "UUID Generator",
@@ -220,7 +213,6 @@ export const tools: Tool[] = [
     keywords: ["timestamp", "unix", "epoch", "date", "time"],
     isNew: true,
   },
-  // Developer - Utilities
   {
     id: "regex-tester",
     name: "Regex Tester",
@@ -246,6 +238,9 @@ export const tools: Tool[] = [
     isNew: true,
   },
 ];
+
+/** Developer tools only — used by route metadata and the /tools/dev hub. */
+export const developerTools: Tool[] = tools.filter((t) => t.category === "developer");
 
 export const categories: {
   id: ToolCategory;
