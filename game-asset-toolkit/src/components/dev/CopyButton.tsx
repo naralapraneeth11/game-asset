@@ -1,50 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, Copy } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { copyText } from "@/lib/dev/browser";
+import { Button } from "./Button";
+import s from "./dev.module.css";
 
-interface CopyButtonProps {
-  text: string;
-  className?: string;
-  label?: string;
-}
-
-export function CopyButton({ text, className, label = "Copy" }: CopyButtonProps) {
+export function CopyButton({ text, label = "Copy", disabled = false, className }: { text: string; label?: string; disabled?: boolean; className?: string }) {
   const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    if (!text) return;
+  const [error, setError] = useState("");
+  const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mounted = useRef(false);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; if (timeout.current) clearTimeout(timeout.current); }; }, []);
+  useEffect(() => { setCopied(false); setError(""); }, [text]);
+  const copy = async () => {
     try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch {
-      // fallback ignored
-    }
+      await copyText(text);
+      if (!mounted.current) return;
+      setCopied(true); setError("");
+      if (timeout.current) clearTimeout(timeout.current);
+      timeout.current = setTimeout(() => setCopied(false), 1800);
+    } catch { if (mounted.current) setError("Copy was blocked. Select the result and copy with your keyboard."); }
   };
-
-  return (
-    <button
-      type="button"
-      onClick={handleCopy}
-      disabled={!text}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted disabled:opacity-40",
-        className
-      )}
-    >
-      {copied ? (
-        <>
-          <Check className="h-3.5 w-3.5 text-emerald-500" />
-          Copied
-        </>
-      ) : (
-        <>
-          <Copy className="h-3.5 w-3.5" />
-          {label}
-        </>
-      )}
-    </button>
-  );
+  return <span className={s.stack} style={{ gap: 4 }}><Button className={className} onClick={copy} disabled={disabled} aria-label={copied ? "Copied to clipboard" : label}>{copied ? <Check size={13} aria-hidden /> : <Copy size={13} aria-hidden />}{copied ? "Copied" : label}</Button><span role="status" className={error ? s.muted : s.srOnly}>{error || (copied ? "Copied to clipboard" : "")}</span></span>;
 }
