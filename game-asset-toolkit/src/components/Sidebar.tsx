@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -23,7 +23,20 @@ import {
   type ToolCategory,
 } from "@/lib/tools";
 
-function SidebarNav() {
+type SidebarProps = {
+  /** Rendered next to the logo — e.g. a collapse (desktop) or close (mobile) button. */
+  controls?: ReactNode;
+  /** Which shell context this instance is rendered in. Not required, but handy if you
+   *  want mobile-only behavior later (autofocus search, different default-expanded groups, etc). */
+  instance?: "desktop" | "mobile";
+  /** Called when the user activates a nav link — wire this to close the mobile dialog. */
+  onNavigate?: () => void;
+};
+
+function SidebarNav({
+  controls,
+  onNavigate,
+}: Pick<SidebarProps, "controls" | "onNavigate">) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const [query, setQuery] = useState("");
@@ -45,19 +58,26 @@ function SidebarNav() {
   return (
     <>
       {/* Logo */}
-      <Link href="/" className="flex items-center gap-2.5 px-3 group">
-        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 transition-transform group-hover:scale-105">
-          <Layers className="h-4 w-4" strokeWidth={2.25} />
-        </div>
-        <div className="min-w-0">
-          <div className="text-sm font-semibold tracking-tight text-foreground truncate">
-            Game Asset Toolkit
+      <div className="flex items-center justify-between gap-2.5 px-3">
+        <Link
+          href="/"
+          className="group flex min-w-0 items-center gap-2.5"
+          onClick={onNavigate}
+        >
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 transition-transform group-hover:scale-105">
+            <Layers className="h-4 w-4" strokeWidth={2.25} />
           </div>
-          <div className="text-[11px] text-muted-foreground truncate">
-            Local-first · Private
+          <div className="min-w-0">
+            <div className="text-sm font-semibold tracking-tight text-foreground truncate">
+              Game Asset Toolkit
+            </div>
+            <div className="text-[11px] text-muted-foreground truncate">
+              Local-first · Private
+            </div>
           </div>
-        </div>
-      </Link>
+        </Link>
+        {controls}
+      </div>
 
       {/* Search */}
       <div className="mt-5 px-3">
@@ -91,6 +111,7 @@ function SidebarNav() {
                     key={tool.id}
                     href={tool.href}
                     aria-current={active ? "page" : undefined}
+                    onClick={onNavigate}
                     className={cn(
                       "flex items-center gap-3 rounded-xl px-2.5 py-2 text-sm transition-all",
                       active
@@ -125,6 +146,7 @@ function SidebarNav() {
                     key={tool.id}
                     href={tool.href}
                     aria-current={active ? "page" : undefined}
+                    onClick={onNavigate}
                     className={cn(
                       "flex items-center gap-3 rounded-xl px-2.5 py-2 text-sm transition-all",
                       active
@@ -193,6 +215,7 @@ function SidebarNav() {
                           key={tool.id}
                           href={tool.href}
                           aria-current={active ? "page" : undefined}
+                          onClick={onNavigate}
                           className={cn(
                             "flex items-center gap-3 rounded-xl px-2.5 py-2 text-sm transition-all",
                             active
@@ -247,24 +270,12 @@ function SidebarNav() {
   );
 }
 
-export default function Sidebar() {
+export default function Sidebar({ controls, onNavigate }: SidebarProps) {
+  // Layout chrome (the <aside>, mobile bar, and <dialog>) now lives in AppShell.tsx —
+  // this component only renders the sidebar's content.
   return (
-    <>
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border bg-[var(--sidebar)] py-5 md:flex">
-        <SidebarNav />
-      </aside>
-
-      {/* Mobile top bar */}
-      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-card/80 px-4 py-3 backdrop-blur-xl md:hidden">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900">
-            <Layers className="h-3.5 w-3.5" />
-          </div>
-          <span className="text-sm font-semibold text-foreground">
-            Game Asset Toolkit
-          </span>
-        </Link>
-      </div>
-    </>
+    <div className="flex h-full flex-col py-5">
+      <SidebarNav controls={controls} onNavigate={onNavigate} />
+    </div>
   );
 }
