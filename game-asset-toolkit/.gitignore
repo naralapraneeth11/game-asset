@@ -1,0 +1,5 @@
+# Generated video editor assets and local build files
+/public/tools/video-editor/vendor/
+/.video-editor-backups/
+/.toolchains/
+/src/tools/video-editor/rust/pixel-ops/target/
