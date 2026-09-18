@@ -24,12 +24,8 @@ import {
 } from "@/lib/tools";
 
 type SidebarProps = {
-  /** Rendered next to the logo — e.g. a collapse (desktop) or close (mobile) button. */
   controls?: ReactNode;
-  /** Which shell context this instance is rendered in. Not required, but handy if you
-   *  want mobile-only behavior later (autofocus search, different default-expanded groups, etc). */
   instance?: "desktop" | "mobile";
-  /** Called when the user activates a nav link — wire this to close the mobile dialog. */
   onNavigate?: () => void;
 };
 
@@ -44,6 +40,7 @@ function SidebarNav({
     image: true,
     sprite: true,
     "3d": true,
+    video: true,
     developer: true,
   });
 
@@ -57,7 +54,6 @@ function SidebarNav({
 
   return (
     <>
-      {/* Logo */}
       <div className="flex items-center justify-between gap-2.5 px-3">
         <Link
           href="/"
@@ -79,7 +75,6 @@ function SidebarNav({
         {controls}
       </div>
 
-      {/* Search */}
       <div className="mt-5 px-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -94,7 +89,6 @@ function SidebarNav({
       </div>
 
       <nav className="mt-5 flex flex-1 flex-col gap-1 overflow-y-auto px-2 pb-4">
-        {/* Suggested (only when not searching) */}
         {!isSearching && (
           <div className="mb-3">
             <div className="flex items-center gap-1.5 px-2.5 pb-1.5">
@@ -128,7 +122,6 @@ function SidebarNav({
           </div>
         )}
 
-        {/* Search results or Categories */}
         {isSearching ? (
           <div className="space-y-0.5">
             <p className="px-2.5 pb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">
@@ -166,30 +159,6 @@ function SidebarNav({
         ) : (
           categories.map((cat) => {
             const catTools = tools.filter((t) => t.category === cat.id);
-            if (catTools.length === 0 && cat.id === "developer") {
-              // Show empty developer section as coming soon
-              return (
-                <div key={cat.id} className="mb-2">
-                  <button
-                    onClick={() => toggleCategory(cat.id)}
-                    className="flex w-full items-center justify-between px-2.5 py-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80 hover:text-muted-foreground transition"
-                  >
-                    <span>{cat.label}</span>
-                    <ChevronRight
-                      className={cn(
-                        "h-3 w-3 transition-transform",
-                        expanded[cat.id] && "rotate-90"
-                      )}
-                    />
-                  </button>
-                  {expanded[cat.id] && (
-                    <p className="px-2.5 py-2 text-[12px] text-muted-foreground/60">
-                      Coming soon — JSON, JWT, Base64...
-                    </p>
-                  )}
-                </div>
-              );
-            }
             if (catTools.length === 0) return null;
 
             return (
@@ -236,7 +205,6 @@ function SidebarNav({
         )}
       </nav>
 
-      {/* Theme */}
       <div className="border-t border-border px-3 pt-4">
         <p className="px-1 pb-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
           Appearance
@@ -271,8 +239,6 @@ function SidebarNav({
 }
 
 export default function Sidebar({ controls, onNavigate }: SidebarProps) {
-  // Layout chrome (the <aside>, mobile bar, and <dialog>) now lives in AppShell.tsx —
-  // this component only renders the sidebar's content.
   return (
     <div className="flex h-full flex-col py-5">
       <SidebarNav controls={controls} onNavigate={onNavigate} />
