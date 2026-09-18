@@ -16,10 +16,11 @@ import {
   Clock3,
   Palette,
   LockKeyhole,
+  Film,
   type LucideIcon,
 } from "lucide-react";
 
-export type ToolCategory = "image" | "3d" | "sprite" | "developer";
+export type ToolCategory = "image" | "3d" | "sprite" | "video" | "developer";
 export type DeveloperGroup = "Formatters" | "Encoding" | "Security & Tokens" | "Generators" | "Utilities";
 export const developerGroups: DeveloperGroup[] = ["Formatters", "Encoding", "Security & Tokens", "Generators", "Utilities"];
 
@@ -101,6 +102,18 @@ export const tools: Tool[] = [
     category: "3d",
     keywords: ["3d", "obj", "stl", "gltf", "glb", "usd", "usdz", "convert", "model"],
     suggested: true,
+  },
+  {
+    id: "video-editor",
+    name: "Video Editor & Converter",
+    shortName: "Video Editor",
+    description: "Trim, resize, edit, compress and convert video locally",
+    href: "/tools/video-editor",
+    icon: Film,
+    category: "video",
+    keywords: ["video", "convert", "compress", "trim", "mp4", "webm", "gif", "audio"],
+    suggested: true,
+    isNew: true,
   },
   {
     id: "json-formatter",
@@ -250,6 +263,7 @@ export const categories: {
   { id: "image", label: "Image Tools", description: "Scale, compress, convert" },
   { id: "sprite", label: "Sprite Tools", description: "Pack, export, atlas" },
   { id: "3d", label: "3D Tools", description: "Convert models" },
+  { id: "video", label: "Video Tools", description: "Edit, compress, convert" },
   { id: "developer", label: "Developer Tools", description: "JSON, JWT, Base64, Hash..." },
 ];
 
