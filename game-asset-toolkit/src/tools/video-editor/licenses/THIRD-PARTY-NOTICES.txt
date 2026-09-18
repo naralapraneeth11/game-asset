@@ -1,0 +1,28 @@
+Game Asset Toolkit — Video Editor third-party notices
+
+@ffmpeg/ffmpeg 0.12.15: MIT, copyright (c) 2019 Jerome Wu.
+License: ffmpeg-wrapper-MIT.txt
+Source: https://github.com/ffmpegwasm/ffmpeg.wasm
+
+@ffmpeg/core and @ffmpeg/core-mt 0.12.10: GPL-2.0-or-later.
+License: ffmpeg-core-GPLv2.txt
+FFmpeg and codec authors retain their respective copyrights.
+Source/build scripts: https://github.com/ffmpegwasm/ffmpeg.wasm
+FFmpeg source: https://github.com/FFmpeg/FFmpeg
+These compiled cores include third-party codecs. Their GPL license and
+corresponding-source obligations apply when distributing the binaries.
+Preserve notices and provide corresponding source for the exact distributed
+build in compliance with the license; these notices alone are not a source offer.
+
+Mediabunny 1.56.3: MPL-2.0, copyright (c) 2026-present, Vanilagy and contributors.
+License: mediabunny-MPL-2.0.txt
+Source: https://github.com/Vanilagy/mediabunny
+
+Codec assets are served by this application. No media is sent to these upstream
+projects and no dependency is loaded from a CDN while processing a user's video.
+
+Comlink 4.4.2: Apache-2.0. License: comlink-Apache-2.0.txt
+Source: https://github.com/GoogleChromeLabs/comlink
+
+fflate 0.8.2: MIT. License: fflate-MIT.txt
+Source: https://github.com/101arrowz/fflate
