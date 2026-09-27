@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { CheckCircle2, FileJson, Loader2, XCircle } from 'lucide-react';
 import { ToolShell, CodeEditor, OutputPanel, ActionBar, CopyButton, FileDropzone, Button, Field, OptionToggle, Notice, Segments } from '@/components/dev';
 import s from '@/components/dev/dev.module.css';
 import { JSON_MAX_BYTES, type JsonTreeNode } from '@/lib/dev/json';
@@ -20,6 +21,19 @@ function TreeNode({ node, root = false }: { node: JsonTreeNode; root?: boolean }
     </div>
     {open && expandable && <ul style={{ paddingLeft: 20, margin: 0, borderLeft: '1px solid var(--border)' }}>{node.children!.map((child, index) => <TreeNode node={child} key={index} />)}{(node.omitted ?? 0) > 0 && <li className={s.muted} style={{ listStyle: 'none', padding: 8 }}>{node.omitted!.toLocaleString()} more entries. The complete data is preserved in output.</li>}</ul>}
   </li>;
+}
+
+/** The JSON Validator leads with the answer: a large Valid / Invalid banner. */
+function ValidityBanner({ state, error, count }: { state: 'empty' | 'checking' | 'valid' | 'invalid'; error?: string; count?: number }) {
+  const tone = state === 'valid' ? 'border-[var(--success)] bg-[color-mix(in_srgb,var(--success)_8%,var(--card))]' : state === 'invalid' ? 'border-[var(--danger)] bg-[color-mix(in_srgb,var(--danger)_7%,var(--card))]' : 'border-border bg-card';
+  const Icon = state === 'valid' ? CheckCircle2 : state === 'invalid' ? XCircle : state === 'checking' ? Loader2 : FileJson;
+  return <div role="status" aria-live="polite" className={`flex items-start gap-4 rounded-2xl border-2 px-5 py-4 ${tone}`}>
+    <Icon className={`mt-0.5 h-7 w-7 shrink-0 ${state === 'valid' ? 'text-[var(--success)]' : state === 'invalid' ? 'text-[var(--danger)]' : 'text-muted-foreground'} ${state === 'checking' ? 'animate-spin' : ''}`} aria-hidden />
+    <div className="min-w-0">
+      <p className="text-xl font-semibold tracking-tight">{state === 'valid' ? 'Valid JSON' : state === 'invalid' ? 'Invalid JSON' : state === 'checking' ? 'Checking…' : 'Paste JSON to check it'}</p>
+      <p className="mt-1 break-words text-sm text-muted-foreground">{state === 'valid' ? `${(count ?? 0).toLocaleString()} values, well-formed according to RFC 8259.` : state === 'invalid' ? error : state === 'checking' ? 'Parsing in a background worker.' : 'Results update as you type. Drop a .json file up to 10 MB, or try the example.'}</p>
+    </div>
+  </div>;
 }
 
 export default function JsonTool({ validatorOnly = false }: { validatorOnly?: boolean }) {
@@ -58,6 +72,7 @@ export default function JsonTool({ validatorOnly = false }: { validatorOnly?: bo
   const clear = () => { setSource(''); setResult({}); setFileError(''); };
   const filename = `formatted.${format}`;
   return <ToolShell toolId={validatorOnly ? 'json-validator' : 'json-formatter'} onClear={clear} onProcess={() => setRevision(value => value + 1)} actions={<ActionBar onClear={clear} output={pending ? '' : result.output} filename={filename} />}>
+    {validatorOnly && <ValidityBanner state={!source.trim() ? 'empty' : pending ? 'checking' : result.error ? 'invalid' : result.nodeCount !== undefined ? 'valid' : 'checking'} error={result.error} count={result.nodeCount} />}
     <div className={s.options}>
       <Field label="Whitespace"><Segments label="Whitespace" value={indent} onChange={setIndent} options={[{ value: '  ', label: '2 spaces' }, { value: '    ', label: '4 spaces' }, { value: '\t', label: 'Tab' }, { value: '', label: 'Minify' }]} /></Field>
       <OptionToggle label="Sort object keys" checked={sort} onChange={setSort} description="Stable, case-sensitive ordering. Arrays retain their order." />
@@ -67,13 +82,13 @@ export default function JsonTool({ validatorOnly = false }: { validatorOnly?: bo
     <FileDropzone onFile={async file => { try { const text = await file.text(); setFileError(''); setSource(text.replace(/^\uFEFF/, '')); } catch (error) { setFileError(errorMessage(error)); } }} onError={setFileError} accept=".json,application/json,text/plain" maxBytes={JSON_MAX_BYTES} label="Open or drop a JSON file" description="Up to 10 MiB · processed in a dedicated browser worker" />
     {fileError && <Notice tone="error">{fileError}</Notice>}
     <div className={s.split}>
-      <CodeEditor label="JSON input" value={source} onChange={value => { setSource(value); setFileError(''); }} placeholder={'{\n  "project": "Game Asset Toolkit",\n  "local": true\n}'} minHeight={460} error={!pending ? result.error : undefined} description="Strict JSON. Numbers retain their exact source representation." actions={<Button variant="ghost" onClick={() => setSource('{\n  "project": "Game Asset Toolkit",\n  "assets": [{ "name": "hero.png", "scale": 2 }],\n  "local": true\n}')}>Example</Button>} />
+      <CodeEditor label="JSON input" value={source} onChange={value => { setSource(value); setFileError(''); }} placeholder={'{\n  "project": "My Game",\n  "local": true\n}'} minHeight={460} error={!pending ? result.error : undefined} description="Strict JSON. Numbers retain their exact source representation." actions={<Button variant="ghost" onClick={() => setSource('{\n  "project": "My Game",\n  "assets": [{ "name": "hero.png", "scale": 2 }],\n  "local": true\n}')}>Example</Button>} />
       <div className={s.stack}>
         <Segments label="Result view" value={view} onChange={setView} options={[{ value: 'text', label: 'Output' }, { value: 'tree', label: 'Tree' }]} />
         {view === 'text' ? <OutputPanel label={validatorOnly ? 'Validated JSON' : `${format.toUpperCase()} output`} value={pending ? '' : result.output ?? ''} filename={filename} language={format === 'json' ? 'json' : 'text'} busy={pending} /> : <section className={s.panel} aria-label="JSON tree"><div className={s.panelHeader}>Explore JSON <span className={s.muted}>Copy a JSONPath from any row</span></div><div className={s.panelBody} style={{ minHeight: 390, maxHeight: 660, overflow: 'auto' }}>{pending ? <p className={s.muted}>Parsing…</p> : result.tree ? <ul className={s.tree} style={{ padding: 0, margin: 0 }}><TreeNode node={result.tree} root /></ul> : <p className={s.muted}>Enter valid JSON to explore its structure.</p>}</div></section>}
       </div>
     </div>
-    {!pending && result.nodeCount !== undefined && <Notice tone="success">Valid JSON · {result.nodeCount.toLocaleString()} values. Tree previews show up to 100 children per node and 3,000 values overall.</Notice>}
+    {!validatorOnly && !pending && result.nodeCount !== undefined && <Notice tone="success">Valid JSON · {result.nodeCount.toLocaleString()} values. Tree previews show up to 100 children per node and 3,000 values overall.</Notice>}
     {!pending && result.conversionError && <Notice tone="error">{result.conversionError}</Notice>}
     {!pending && !!result.duplicateKeys && <Notice tone="warning">{result.duplicateKeys} duplicate object key(s) are preserved. Other JSON consumers may keep only the last value; paths with repeated keys are ambiguous.</Notice>}
     {!pending && !!result.unsafeIntegers && <Notice tone="info">Large numeric values are preserved exactly, including values JavaScript cannot represent safely.</Notice>}

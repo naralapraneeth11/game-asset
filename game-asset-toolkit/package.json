@@ -7,9 +7,12 @@
     "build": "node src/tools/image-compressor/scripts/prepare.mjs && node src/tools/video-editor/scripts/prepare.mjs && next build && node src/tools/image-compressor/scripts/offline-manifest.mjs",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run test:image-compressor && npm run check:seo",
+    "test:image-compressor": "node src/tools/image-compressor/scripts/prepare.mjs && node --test src/tools/image-compressor/tests/*.test.mjs",
+    "check:seo": "node scripts/check-seo.mjs",
     "prepare:image-compressor": "node src/tools/image-compressor/scripts/prepare.mjs",
     "prepare:video-editor": "node src/tools/video-editor/scripts/prepare.mjs",
-    "test:image-compressor": "node src/tools/image-compressor/scripts/prepare.mjs && node --test src/tools/image-compressor/tests/*.test.mjs",
     "postinstall": "node src/tools/image-compressor/scripts/prepare.mjs && node src/tools/video-editor/scripts/prepare.mjs"
   },
   "dependencies": {

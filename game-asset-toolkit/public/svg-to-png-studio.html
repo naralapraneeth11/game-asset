@@ -1,10 +1,12 @@
 <!doctype html>
 <!--
-Game Asset Toolkit — SVG to PNG Set, v1.0.0
+SVG to PNG Converter, v1.1.0
 Copyright (c) 2026. Permission is granted to use, modify, and distribute this file.
 
 APP INTEGRATION
-The Next.js route mounts this file through src/tools/svg-png-set/SvgPngSet.tsx.
+The Next.js routes /svg-to-png, /favicon-generator and /app-icon-generator mount
+this file through src/tools/svg-png-set/SvgPngSet.tsx, passing ?preset=web|apple|
+android|custom to choose the starting export preset.
 The app owns the page heading, resolved theme, typography, and iframe sizing.
 Native dialogs/toasts use host-visible viewport offsets in embedded mode.
 Only same-origin app font assets may be reused; no third-party UI dependencies.
@@ -13,7 +15,7 @@ DEPLOYMENT
 1. Serve this file as text/html over HTTPS, or open it locally. No build, package,
    CDN, API key, analytics, uploads, or server-side processing is required.
 2. To embed in an existing site, use an iframe whose src points to this file:
-   <iframe src="/tools/svg-to-png-studio.html" title="SVG to PNG Set"
+   <iframe src="/svg-to-png-studio.html?preset=web" title="SVG to PNG Converter"
            style="width:100%;height:1200px;border:0" loading="lazy"></iframe>
    If you sandbox the iframe, allow scripts, same-origin, and downloads.
 3. A stricter host CSP must authorize this file's inline style/script (hashes or
@@ -59,7 +61,9 @@ https://www.w3.org/TR/appmanifest/#icon-masks
   <meta name="description" content="Turn SVG artwork into precisely sized PNGs, favicons, and app icon bundles. Private, local, and completely in your browser.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' blob:; style-src 'unsafe-inline'; img-src data: blob:; font-src 'self' data:; worker-src blob:; connect-src https:; base-uri 'none'; form-action 'none'; object-src 'none'">
   <meta name="color-scheme" content="light dark">
-  <title>SVG to PNG Set · Game Asset Toolkit</title>
+  <!-- Only the app pages that embed this file (/svg-to-png, /favicon-generator, /app-icon-generator) should rank. -->
+  <meta name="robots" content="noindex, indexifembedded">
+  <title>SVG to PNG Converter</title>
   <script>
     // Match the shell before first paint. The React wrapper handles live changes.
     (() => {
@@ -282,7 +286,7 @@ https://www.w3.org/TR/appmanifest/#icon-masks
     <symbol id="rs-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
     <symbol id="rs-file" viewBox="0 0 24 24"><path d="M14 2H5v20h14V7l-5-5Zm0 0v5h5M8 12h8M8 16h5"/></symbol>
   </defs></svg>
-  <h1 id="rs-title" class="rs-sr">SVG to PNG Set</h1>
+  <h1 id="rs-title" class="rs-sr">SVG to PNG Converter</h1>
   <noscript><p class="rs-alert">This tool needs JavaScript to process images locally. Enable JavaScript and reload this page.</p></noscript>
   <div class="rs-workspace">
     <div class="rs-left">
@@ -366,6 +370,7 @@ https://www.w3.org/TR/appmanifest/#icon-masks
   let toastTimer;
   function toast(text) { setText('toast',text); $('toast').hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(()=>{$('toast').hidden=true;},4500); }
   function showError(text='') { setText('export-error',text); $('export-error').hidden=!text; }
+  const initialPreset=(()=>{const value=new URLSearchParams(location.search).get('preset');return ['web','apple','android','custom'].includes(value)?value:'web';})();
   const state={files:[],selected:null,busy:false,ingesting:false,preset:'web',padding:10,trim:true,background:'transparent',color:'#ffffff',custom:'64, 128, 256, 512, 1024',previewIndex:0,previewVersion:0,previewURL:null,result:null,job:0,ingestErrors:[]};
 
   // Shared renderer and ZIP implementation. This function has no DOM dependencies
@@ -583,7 +588,7 @@ https://www.w3.org/TR/appmanifest/#icon-masks
       add('android/res/mipmap-anydpi-v26/ic_launcher.xml','<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n    <background android:drawable="@color/ic_launcher_background" />\n    <foreground android:drawable="@mipmap/ic_launcher_foreground" />\n</adaptive-icon>\n','application/xml');
       add('android/res/values/ic_launcher_colors.xml','<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">'+options.color+'</color>\n</resources>\n','application/xml');
     }
-    add('export-manifest.json',json({generator:'SVG to PNG Set 1.0.0',source:file.name,preset:options.preset,paddingPerSide:options.padding/100,autoTrim:options.trim,background:options.background,color:options.color,trimScanMaxPixels:LIMIT.scan,outputs:plan.map(p=>({path:p.name,width:p.width,height:p.height,background:p.transparent?'transparent':p.opaque||options.background==='solid'?options.color:'transparent',safeCircleDiameter:p.safe||null})),notes:file.warnings}),'application/json');
+    add('export-manifest.json',json({generator:'SVG to PNG Converter 1.1.0',source:file.name,preset:options.preset,paddingPerSide:options.padding/100,autoTrim:options.trim,background:options.background,color:options.color,trimScanMaxPixels:LIMIT.scan,outputs:plan.map(p=>({path:p.name,width:p.width,height:p.height,background:p.transparent?'transparent':p.opaque||options.background==='solid'?options.color:'transparent',safeCircleDiameter:p.safe||null})),notes:file.warnings}),'application/json');
     const specific=options.preset==='web'?'WEB\nCopy web/ to your public asset directory. Adjust the paths in head-snippet.html, and edit site.webmanifest name, id, start_url, scope, colors, and paths for your app. A manifest alone does not add offline behavior. The maskable PNG fits the artwork inside the central safe circle. favicon.ico contains PNG-backed 16, 32, and 48px images for modern clients.\n':options.preset==='apple'?'APPLE\nImport the relevant AppIcon.appiconset into your iOS or macOS Assets.xcassets catalog. Select AppIcon in the target settings. These are traditional raster assets with light/default artwork, not layered Icon Composer appearances, watchOS, tvOS, or visionOS assets. All PNGs are flattened to the chosen background. Xcode/App Store validation remains part of your app release process.\n':options.preset==='android'?'ANDROID\nMerge android/res/ into app/src/main/res/. Resolve existing resource-name conflicts before replacing files. Set android:icon="@mipmap/ic_launcher" on your application in AndroidManifest.xml. Adaptive foreground layers have a conservative 66dp safe circle within a 108dp canvas; the background comes from ic_launcher_colors.xml. Android selects the v26 adaptive resource where supported, and the legacy PNG on older versions. Monochrome themed icons require separately designed artwork and are not generated. play-store-icon.png is the 512px store asset.\n':'CUSTOM\nFiles in png/ have the exact requested dimensions, with artwork centered and contained without stretching.\n';
     add('README.txt','SVG TO PNG SET\n\n'+specific+'\nRENDERING\nEvery output is rasterized from the original vector at its target size. Trimming is estimated from an alpha scan up to 2048px; tiny details may be missed. Browser font rendering can vary. Use outlined text for portable typography. Review every final icon, especially small favicons, before release. PNG compression is lossless; embedded raster images cannot gain vector detail.\n\nSOURCE NOTES\n'+(file.warnings.length?file.warnings.map(w=>'- '+w).join('\n'):'No preprocessing warnings.')+'\n');
     return files;
@@ -964,8 +969,8 @@ https://www.w3.org/TR/appmanifest/#icon-masks
   function settingsChanged(){releaseResult();showError();refresh();schedulePreview();}
   function resetSettings() {
     if(state.busy||state.ingesting)return;
-    Object.assign(state,{preset:'web',padding:10,trim:true,background:'transparent',color:'#ffffff',custom:'64, 128, 256, 512, 1024',previewIndex:0});
-    $$('input[name="rs-preset"]').forEach(i=>{i.checked=i.value==='web';});$('trim').checked=true;$('padding').value='10';setText('padding-value','10%');$('color').value='#ffffff';$('color-hex').value='#FFFFFF';$('custom-sizes').value=state.custom;settingsChanged();
+    Object.assign(state,{preset:initialPreset,padding:10,trim:true,background:'transparent',color:'#ffffff',custom:'64, 128, 256, 512, 1024',previewIndex:0});
+    $$('input[name="rs-preset"]').forEach(i=>{i.checked=i.value===initialPreset;});$('trim').checked=true;$('padding').value='10';setText('padding-value','10%');$('color').value='#ffffff';$('color-hex').value='#FFFFFF';$('custom-sizes').value=state.custom;settingsChanged();
   }
   $('browse').addEventListener('click',()=>$('file-input').click());
   $('file-input').addEventListener('change',e=>ingest(e.target.files));
@@ -994,6 +999,8 @@ https://www.w3.org/TR/appmanifest/#icon-masks
   if(window.ResizeObserver)new ResizeObserver(sizePreview).observe($('stage'));
   else window.addEventListener('resize',sizePreview);
   window.addEventListener('pagehide',()=>{assetAbort?.abort();for(const url of downloadURLs)URL.revokeObjectURL(url);downloadURLs.clear();});
+  // ?preset=web|apple|android|custom lets each app page open on its own job.
+  state.preset=initialPreset;$$('input[name="rs-preset"]').forEach(i=>{i.checked=i.value===initialPreset;});
   refresh();
 })();
 </script>

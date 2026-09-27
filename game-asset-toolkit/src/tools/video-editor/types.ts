@@ -12,6 +12,8 @@ export interface VideoSettings {
   textColor: string; textX: number; textY: number; textOpacity: number;
   watermarkX: number; watermarkY: number; watermarkWidth: number; watermarkOpacity: number;
   mute: boolean; volume: number; normalize: boolean;
+  /** Maximum GIF width in pixels; GIF output is capped at LIMITS.gifWidth. */
+  gifWidth: number;
 }
 export interface MediaInfo {
   duration: number; width: number; height: number; frameRate: number;
@@ -34,6 +36,6 @@ export const DEFAULT_SETTINGS: VideoSettings = {
   speed: 1, preservePitch: true, brightness: 0, contrast: 1, saturation: 1, exposure: 0, look: "none",
   text: "", font: "sans-serif", fontSize: 5, textColor: "#ffffff", textX: 0.5, textY: 0.85, textOpacity: 1,
   watermarkX: 0.85, watermarkY: 0.12, watermarkWidth: 0.18, watermarkOpacity: 0.8,
-  mute: false, volume: 1, normalize: false,
+  mute: false, volume: 1, normalize: false, gifWidth: 640,
 };
 export const LIMITS = { queue: 20, nativeInput: 8 * 1024 ** 3, fallbackInput: 256 * 1024 ** 2, memoryOutput: 128 * 1024 ** 2, ffmpegOutput: 128 * 1024 ** 2, pixels: 3840 * 2160, gifSeconds: 30, gifWidth: 640, batchZip: 256 * 1024 ** 2 } as const;

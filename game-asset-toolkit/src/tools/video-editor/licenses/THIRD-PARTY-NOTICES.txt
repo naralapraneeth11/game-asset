@@ -1,4 +1,4 @@
-Game Asset Toolkit — Video Editor third-party notices
+Video tools (Video Compressor, Converter, Video to GIF, Video Editor): third-party notices
 
 @ffmpeg/ffmpeg 0.12.15: MIT, copyright (c) 2019 Jerome Wu.
 License: ffmpeg-wrapper-MIT.txt

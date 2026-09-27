@@ -7,7 +7,7 @@ import type { VideoEngine } from "./engine/video.worker";
 import { errorText } from "./engine/shared";
 
 type Bridge = { worker: Worker; api: Remote<VideoEngine>; failed: Promise<never>; dead: boolean; destroy: (reason: Error) => void };
-const freshSettings = (): VideoSettings => ({ ...DEFAULT_SETTINGS, crop: { ...DEFAULT_SETTINGS.crop } });
+export const freshSettings = (patch: Partial<VideoSettings> = {}): VideoSettings => ({ ...DEFAULT_SETTINGS, crop: { ...DEFAULT_SETTINGS.crop }, ...patch });
 const keyOf = (file: File) => `${file.name}\0${file.size}\0${file.lastModified}`;
 
 function download(blob: Blob, filename: string) {
@@ -19,10 +19,19 @@ function download(blob: Blob, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
-export function useVideoEditor() {
+export interface VideoEditorOptions {
+  /** Starting settings for a task page, such as the compressor's Balanced preset. */
+  initialSettings?: Partial<VideoSettings>;
+  /** Output name suffix: clip_compressed.mp4 instead of clip_edited.mp4. */
+  suffix?: string;
+  /** What Ctrl/Cmd + Enter exports. Task pages process the whole batch. */
+  shortcut?: "selected" | "all";
+}
+
+export function useVideoEditor({ initialSettings, suffix = "edited", shortcut = "selected" }: VideoEditorOptions = {}) {
   const [items, setItems] = useState<QueueItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [settings, setSettings] = useState<VideoSettings>(freshSettings);
+  const [settings, setSettings] = useState<VideoSettings>(() => freshSettings(initialSettings));
   const [watermark, setWatermark] = useState<File | null>(null);
   const [capabilities, setCapabilities] = useState<CapabilityReport | null>(null);
   const [busy, setBusy] = useState(false);
@@ -185,6 +194,7 @@ export function useVideoEditor() {
         });
         try {
           const result = await call((api) => api.run(request, progress));
+          if (suffix !== "edited") result.filename = result.filename.replace(/_edited(\.[a-z0-9]+)$/, suffix ? `_${suffix}$1` : "$1");
           if (cancelled.current || version !== lifecycle.current) { await release(result); break; }
           const retained = rows.current.reduce((sum, item) => sum + (item.id !== row.id && item.result && !item.result.workspaceId ? item.result.blob.size : 0), 0);
           if (!result.workspaceId && retained + result.blob.size > LIMITS.batchZip) {
@@ -208,7 +218,7 @@ export function useVideoEditor() {
       occupied.current = false;
       if (mounted.current && version === lifecycle.current) setBusy(false);
     }
-  }, [call, patch, release, settings, watermark]);
+  }, [call, patch, release, settings, suffix, watermark]);
 
   const cancel = useCallback(() => {
     cancelled.current = true; setMessage("Stopping and cleaning up…");
@@ -256,12 +266,12 @@ export function useVideoEditor() {
   const exportAll = useCallback(() => process(rows.current.filter((row) => row.info).map((row) => row.id)), [process]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") { event.preventDefault(); void exportSelected().catch((failure: unknown) => setError(errorText(failure))); }
+      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") { event.preventDefault(); void (shortcut === "all" ? exportAll() : exportSelected()).catch((failure: unknown) => setError(errorText(failure))); }
       if (event.key === "Escape" && occupied.current) { event.preventDefault(); cancel(); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [cancel, exportSelected]);
+  }, [cancel, exportAll, exportSelected, shortcut]);
 
   return { items, selectedId, select, settings, setSettings: setSettings as Dispatch<SetStateAction<VideoSettings>>, watermark, setWatermark, capabilities, busy, message, error, addFiles, remove, clear, exportAll, exportSelected, cancel, save, saveAll, share, snapshot };
 }

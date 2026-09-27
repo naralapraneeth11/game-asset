@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTheme } from "@/lib/theme";
 
-const FRAME_SRC = "/svg-to-png-studio.html?embedded=1";
+export type SvgPreset = "web" | "apple" | "android" | "custom";
+const frameSource = (preset: SvgPreset) => `/svg-to-png-studio.html?embedded=1&preset=${preset}`;
 const THEME_TOKENS = [
   "--background", "--foreground", "--muted", "--muted-foreground",
   "--border", "--accent", "--accent-foreground", "--card", "--hover",
@@ -39,7 +40,9 @@ function appFontRules(): string {
   return Array.from(faces).join("\n");
 }
 
-export default function SvgPngSet() {
+/** The SVG engine in a same-origin iframe. `preset` picks the starting export preset. */
+export default function SvgPngSet({ preset = "custom", title = "SVG to PNG Converter" }: { preset?: SvgPreset; title?: string }) {
+  const src = frameSource(preset);
   const { resolvedTheme } = useTheme();
   const frameRef = useRef<HTMLIFrameElement>(null);
   const cleanupRef = useRef<(() => void) | null>(null);
@@ -79,8 +82,8 @@ export default function SvgPngSet() {
       animationFrame = 0;
       if (disposed) return;
       const rect = frame.getBoundingClientRect();
-      // The mobile shell has a 53px sticky top bar; desktop has a fixed sidebar.
-      const topBar = window.innerWidth < 768 ? 53 : 0;
+      // The sticky top bar (56px) covers the top of the viewport on every screen size.
+      const topBar = 57;
       const viewport = window.visualViewport;
       const viewportTop = Math.max(topBar, viewport?.offsetTop || 0);
       const viewportBottom = viewport ? viewport.offsetTop + viewport.height : window.innerHeight;
@@ -138,14 +141,14 @@ export default function SvgPngSet() {
           The converter could not be loaded.{" "}
           <button type="button" className="font-medium text-foreground underline underline-offset-4" onClick={() => {
             setLoadError(false);
-            if (frameRef.current) frameRef.current.src = FRAME_SRC;
+            if (frameRef.current) frameRef.current.src = src;
           }}>Try again</button>
         </p>
       )}
       <iframe
         ref={frameRef}
-        src={FRAME_SRC}
-        title="SVG to PNG Set"
+        src={src}
+        title={title}
         className="block w-full border-0 bg-transparent"
         style={{ height, colorScheme: resolvedTheme }}
         sandbox="allow-scripts allow-same-origin allow-downloads allow-modals"

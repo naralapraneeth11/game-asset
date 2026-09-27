@@ -69,7 +69,7 @@ export default function Base64Tool() {
     catch (cause) { setError(errorMessage(cause)); }
   };
 
-  return <ToolShell toolId="base64" onClear={clear} onProcess={process} actions={<ActionBar onClear={clear}>
+  return <ToolShell toolId="base64-encode-decode" onClear={clear} onProcess={process} actions={<ActionBar onClear={clear}>
     <CopyButton text={result?.output ?? ''} disabled={!result?.textValid || busy} label="Copy result" />
     <Button onClick={outputDownload} disabled={!result || busy}>Download result</Button>
   </ActionBar>}>

@@ -30,7 +30,7 @@ export default function TimestampTool() {
     ['Unix seconds', result.data.seconds], ['Unix milliseconds', result.data.milliseconds],
     ['ISO 8601 · UTC', result.data.iso], ['Selected time zone', result.data.zoned],
   ] : [];
-  return <ToolShell toolId="timestamp" onClear={clear} onProcess={useNow} actions={<ActionBar onClear={clear} output={output} filename="timestamp.txt" />}>
+  return <ToolShell toolId="unix-timestamp-converter" onClear={clear} onProcess={useNow} actions={<ActionBar onClear={clear} output={output} filename="timestamp.txt" />}>
     <div className={s.options}>
       <Segments label="Convert from" value={direction} onChange={setDirection} options={[{ value: 'timestamp', label: 'Unix timestamp' }, { value: 'calendar', label: 'Calendar date' }]} />
       <Button onClick={useNow}>Use current time</Button>

@@ -33,8 +33,8 @@ export default function Toggle({
       disabled={disabled}
       onClick={() => !disabled && onChange(!checked)}
       className={cn(
-        "relative inline-flex h-[28px] w-[48px] shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2",
-        checked ? "bg-[#FF6B00]" : "bg-neutral-200 dark:bg-neutral-700",
+        "relative inline-flex h-[28px] w-[48px] shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        checked ? "bg-primary" : "bg-border-strong",
         disabled && "cursor-not-allowed opacity-50",
         className
       )}

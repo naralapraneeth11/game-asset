@@ -1,4 +1,4 @@
-import { assertGeometry, outputGeometry, LIMITS, MIME, searchQuality, validateSettings } from "./core.js";
+import { assertGeometry, outputGeometry, LIMITS, MIME, resolveFormat, searchQuality, validateSettings } from "./core.js";
 import type { Result, WorkerRequest, WorkerResponse } from "./core.js";
 import { filterPng, inspect } from "./headers.js";
 
@@ -17,11 +17,12 @@ scope.onmessage = async ({ data: request }) => {
   let bitmap: ImageBitmap | undefined, canvas: OffscreenCanvas | undefined;
   const started = performance.now();
   try {
-    const settings = validateSettings(request.settings);
+    const requested = validateSettings(request.settings);
     if (!(file instanceof Blob) || file.size < 12 || file.size > LIMITS.file) throw new Error("Each image must be between 12 bytes and 20 MB.");
     const maxPixels = Math.min(16_000_000, Math.max(1, request.maxPixels || LIMITS.pixels));
     phase("Checking image");
     const input = await file.arrayBuffer(), header = inspect(new Uint8Array(input));
+    const settings = resolveFormat(requested, header.format);
     const oriented = header.orientation >= 5 ? { width: header.height, height: header.width } : header;
     let size = outputGeometry(oriented.width, oriented.height, settings, maxPixels);
     const originalPng = header.format === "png" && settings.format === "png" && header.orientation === 1 && size.width === header.width && size.height === header.height;

@@ -1,81 +1,32 @@
-# Video Editor · Game Asset Toolkit
+# Video tools
 
-Local video editing at `/tools/video-editor`, integrated with the existing app shell, theme variables, Lucide icons, orange Toggle, sidebar registry and Next.js routing.
+One engine behind four pages:
 
-## Install in your existing app
+| Page | Component | First screen | Inside Advanced |
+| --- | --- | --- | --- |
+| `/video-compressor` | `VideoTask mode="compress"` | Smaller / Balanced / Best quality, optional 10 / 25 / 50 MB target | Format, codec, resolution, frame rate, quality, remove audio |
+| `/video-converter` | `VideoTask mode="convert"` | Convert to MP4, WebM, MOV, GIF or MP3 | Codec, resolution, frame rate, quality; WAV and AAC |
+| `/video-to-gif` | `VideoTask mode="gif"` | Start and end (30 s max), width 320 / 480 / 640 | Frame rate |
+| `/video-editor` | `VideoEditor` | The full editor: trim, crop, rotate, color, text, watermark, audio | Export settings, collapsed to a one-line summary |
 
-1. Extract the ZIP. Merge its `game-asset-toolkit/src` and `game-asset-toolkit/public` folders into your existing `game-asset-toolkit` folder. The archive contains only the new video tool and route; keep your other app files.
-2. Open a terminal in your existing `game-asset-toolkit` folder and run:
+`VideoTool.tsx` picks the component from the `mode` prop. Every page shares `useVideoEditor` (queue, worker bridge, cancellation,
+downloads), the worker, and WebCodecs + FFmpeg. Task pages pass `initialSettings` (for example the compressor's Balanced preset:
+up to 1080p, quality 0.72), an output-name suffix (`clip_compressed.mp4`) and `shortcut: "all"` so Cmd/Ctrl + Enter processes the
+whole batch.
 
-   ```sh
-   node src/tools/video-editor/scripts/integrate.mjs
-   ```
+Compressor presets map onto the existing settings fields: Smaller = 720p, quality 0.50; Balanced = up to 1080p, quality 0.72;
+Best quality = original resolution, quality 0.85. Tune them against real clips.
 
-   This updates `package.json`, `src/lib/tools.ts`, `next.config.ts`, and `.gitignore`. It preserves existing build hooks and headers, checks recognizable file structures before changing anything, and backs up edited files under `.video-editor-backups/`. Running it again is safe. It does not access GitHub or install anything.
-3. Use your existing package manager. If the project uses `pnpm-lock.yaml`, run `pnpm install`; if it uses `package-lock.json`, run `npm install`. Commit the updated lockfile. Do not switch package managers just for this tool.
-4. Run your normal development command and open `/tools/video-editor`. Use HTTPS or localhost. Commit the new files, the four integration edits, and the updated lockfile when ready.
+## Cross-origin isolation
 
-Installation and build hooks prepare the FFmpeg assets automatically. If package scripts are disabled by your environment, run `npm run prepare:video-editor` explicitly before building. The command also works through pnpm. Do not use a frozen lockfile for the first install after adding dependencies; update and commit it first.
+FFmpeg runs multi-threaded only when the page is cross-origin isolated. `config/next.ts` sends COOP/COEP/CORP headers for every
+path in `VIDEO_ROUTES` (`src/lib/routes.ts`) and for the engine assets under `/tools/video-editor/`. Headers only arrive with a full
+document load, so links to video pages use `ToolLink`, which renders a plain anchor for tools marked `isolated` in the registry.
+Adding a video page means adding its path to `VIDEO_ROUTES` and marking the tool `isolated: true`.
 
-**Rust does not need to be installed to run or deploy this release.** The compiled `public/tools/video-editor/pixel-ops.wasm` is included and must be committed. Large FFmpeg assets are generated from pinned npm dependencies; do not upload them individually through GitHub's browser uploader.
-
-Set `NEXT_PUBLIC_SITE_URL=https://your-domain.example` for a custom canonical domain. Vercel's production URL is used when that variable is absent.
-
-## If integrating by hand
-
-Keep all existing dependencies and add these exact versions:
-
-```json
-{
-  "@ffmpeg/ffmpeg": "0.12.15",
-  "@ffmpeg/core": "0.12.10",
-  "@ffmpeg/core-mt": "0.12.10",
-  "mediabunny": "1.56.3",
-  "comlink": "4.4.2",
-  "fflate": "0.8.2"
-}
-```
-
-Add `prepare:video-editor` to package scripts with value `node src/tools/video-editor/scripts/prepare.mjs`. Run that command before the existing `dev` and `build` scripts, and append it to the existing `postinstall` with `&&`. Preserve the image compressor's preparation and offline-manifest hooks. Update the lockfile using your existing package manager.
-
-In `next.config.ts`, import and wrap the existing config:
-
-```ts
-import { withVideoEditor } from "./src/tools/video-editor/config/next";
-// Keep your existing nextConfig object and its options.
-export default withVideoEditor(nextConfig);
-```
-
-In `src/lib/tools.ts`, add `Film` to the Lucide import, add `"video"` to `ToolCategory`, and add these entries to the existing arrays:
-
-```ts
-// categories
-{ id: "video", label: "Video Tools", description: "Edit, compress, convert" }
-
-// tools
-{
-  id: "video-editor",
-  name: "Video Editor & Converter",
-  shortName: "Video Editor",
-  description: "Trim, resize, edit, compress and convert video locally",
-  href: "/tools/video-editor",
-  icon: Film,
-  category: "video",
-  keywords: ["video", "convert", "compress", "trim", "mp4", "webm", "gif", "audio"],
-  suggested: true,
-}
-```
-
-The existing sidebar reads the registry automatically. The tool also appears in Suggested. If you want the Video category expanded initially, add `video: true` to the sidebar's existing expanded-state initializer.
-
-Add these paths to `.gitignore`:
-
-```gitignore
-/public/tools/video-editor/vendor/
-/.video-editor-backups/
-/.toolchains/
-/src/tools/video-editor/rust/pixel-ops/target/
-```
+Installation and build hooks prepare the FFmpeg assets automatically (`npm run prepare:video-editor`). **Rust does not need to be
+installed to run or deploy.** The compiled `public/tools/video-editor/pixel-ops.wasm` is committed; large FFmpeg assets are generated
+from pinned npm dependencies into `public/tools/video-editor/vendor/` (git-ignored).
 
 ## Included functionality
 
@@ -96,16 +47,19 @@ Add these paths to `.gitignore`:
 | Preview | Source playback with approximate live edits, crop mode, actual exported-result playback, seeking, fullscreen |
 | Access | Responsive layout, labeled controls, keyboard tabs, focus states, status announcements, reduced-motion support |
 
-Cmd/Ctrl + Enter exports the selected file. Escape cancels the current operation. Space toggles playback when the preview frame has focus. Arrow keys seek in the focused preview; arrows on text/watermark move it 1%, or 5% with Shift. Numeric crop controls provide keyboard alternatives to pointer handles.
+In the editor, Cmd/Ctrl + Enter exports the selected file; on task pages it processes every file. Escape cancels the current operation. Space toggles playback when the preview frame has focus. Arrow keys seek in the focused preview; arrows on text/watermark move it 1%, or 5% with Shift. Numeric crop controls provide keyboard alternatives to pointer handles.
 
 Batch files share the current settings. Trim-out is bounded by each source duration; a trim-in beyond a shorter file's duration produces a file-specific error. A previously exported result remains available if a later export fails; it reflects the settings used for that successful export.
 
 ## Architecture
 
 ```text
-src/app/tools/video-editor/page.tsx       Server route and SEO metadata
+src/app/video-*/page.tsx                   Routes; metadata and copy come from the registry
 src/tools/video-editor/
-  VideoEditor.tsx / .module.css           Native application UI and themes
+  VideoTool.tsx                           Picks the page UI from the mode prop
+  VideoTask.tsx                           Compressor, converter and GIF pages
+  VideoEditor.tsx / .module.css           Full editor UI and shared styles
+  describe.ts                             One-line export summary for Advanced headers
   components/                            Preview, controls, shared orange toggle adapter
   useVideoEditor.ts                      Queue, bridge, cancellation, downloads, lifecycle
   types.ts                               Contracts, defaults, limits
@@ -118,7 +72,7 @@ src/tools/video-editor/
   engine/shared.ts                       Geometry, trim, bitrate planning, filenames
   rust/pixel-ops/                        Rust source, lockfile, no crate dependencies
   config/next.ts                         Route-scoped isolation headers
-  scripts/                              Integration, asset preparation, optional Rust build
+  scripts/                              Asset preparation, optional Rust build
   licenses/                             Dependency notices and license texts
 public/tools/video-editor/pixel-ops.wasm  Included compiled color engine
 public/tools/video-editor/vendor/        Generated self-hosted FFmpeg assets
@@ -139,13 +93,13 @@ The UI stays in TypeScript. Comlink provides typed worker RPC. Mediabunny replac
 - Native output streams to temporary origin-private browser storage when supported, with quota checks and one writer per file. Without that facility, output is bounded to 128 MiB.
 - FFmpeg output is bounded to 128 MiB and checked for truncation. Codec and source complexity still affect peak memory. Retained in-memory results are limited to 256 MiB. Save and remove completed files to free their resources.
 - ZIP download: 256 MiB of total results; larger batches can be saved individually. ZIP work runs in the worker but needs bounded additional memory.
-- GIF: up to 30 seconds, 640 px wide, 15 fps. GIF uses a palette, not the video quality/target-size controls.
+- GIF: up to 30 seconds, 320 / 480 / 640 px wide (`gifWidth`), up to 15 fps. GIF uses a palette, not the video quality/target-size controls.
 - Target MB is a bitrate estimate, not an exact or maximum-size promise. Very small targets are rejected. Audio-only and GIF exports ignore the video target size.
 - AV1 is available only when the browser's native encoder works for the requested configuration. The bundled FFmpeg build does not provide an AV1 encoder. Hardware acceleration is not promised by a positive support check.
 - SDR output only. HDR/wide-gamut video editing and frame extraction are rejected instead of silently changing colors; audio extraction is still possible.
 - Only the primary video and audio tracks are exported. Subtitles, attachments and secondary tracks are omitted. Metadata is stripped. Native video alpha is flattened. Compatibility audio exports at 48 kHz stereo, with 128 kbps for compressed formats; WAV is PCM.
 - The live preview uses the browser's video player. Some sources can export through FFmpeg even when the player cannot preview them. Some exported codecs also require another player for playback.
-- FFmpeg multithreading requires cross-origin isolation and SharedArrayBuffer. Headers are scoped to the video route. Next.js client navigation can retain the previous page's isolation state; reloading the video URL may enable threading. Single-thread fallback remains available.
+- FFmpeg multithreading requires cross-origin isolation and SharedArrayBuffer. Headers are scoped to the video pages, which are always opened with a full page load (see Cross-origin isolation). Single-thread fallback remains available.
 - Native MP4/MOV writes a seekable file with the index at the end; it does not claim progressive web playback. Compatibility MP4/MOV uses fast-start relocation.
 - No PWA/offline installation is included. Native export loads once its app code is available; FFmpeg is downloaded on demand the first time it is needed. Do not promise universal offline use after a single visit.
 
@@ -168,16 +122,6 @@ node src/tools/video-editor/scripts/build-rust.mjs
 
 Commit the updated Wasm alongside the matching Rust source. The ABI is versioned; normal npm installation and Vercel builds use the included binary.
 
-## Validation performed
-
-- TypeScript checked against the installed dependencies and the existing app snapshot.
-- Next.js 15.5.25 production compilation, route generation and type validation passed after fixing the FFmpeg package's runtime enum-export mismatch.
-- Asset preparation completed using the pinned packages.
-- Rust kernel identity, alpha-preservation and bounds checks passed; the compiled module is included.
-- Bundled FFmpeg encoder availability was inspected by running the installed core.
-
-This release has not completed a cross-browser, real-media acceptance matrix. Check your representative source files, audio synchronization, mobile memory behavior and output playback on your deployment before describing it as production-certified. The integration was built from the existing local app snapshot; it does not replace or fetch your current GitHub project.
-
 ## References and dependency notices
 
 - [Mediabunny conversion API](https://mediabunny.dev/guide/converting-media-files)
@@ -185,6 +129,6 @@ This release has not completed a cross-browser, real-media acceptance matrix. Ch
 - [FFmpeg Wasm architecture](https://ffmpegwasm.netlify.app/docs/overview/)
 - [FFmpeg wrapper API](https://ffmpegwasm.netlify.app/docs/api/ffmpeg/classes/ffmpeg/)
 
-See `licenses/THIRD-PARTY-NOTICES.txt`. FFmpeg core binaries are GPL-licensed; retain the notices and meet their corresponding-source distribution requirements. Rust sources in this tool do not require downloading a Rust runtime in production.
+See `licenses/THIRD-PARTY-NOTICES.txt`, published with the license texts at `/licenses`. FFmpeg core binaries are GPL-licensed; retain the notices and meet their corresponding-source distribution requirements. Rust sources in this tool do not require downloading a Rust runtime in production.
 
 Future blueprint items—subtitles, merging, reverse/boomerang, chroma key, social preset library, PWA installation and opt-in recent projects—are not included in this v1 core implementation.

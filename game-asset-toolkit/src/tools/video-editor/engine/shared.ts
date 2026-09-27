@@ -2,7 +2,7 @@ import { LIMITS, type Container, type MediaInfo, type VideoSettings } from "../t
 
 export function clamp(value: number, min: number, max: number): number { return Math.max(min, Math.min(max, value)); }
 export function geometry(info: MediaInfo, settings: VideoSettings) {
-  const numbers = [info.duration, info.width, info.height, settings.speed, settings.fps, settings.resolution, settings.targetMB, settings.quality, settings.trimStart, settings.trimEnd, settings.crop.x, settings.crop.y, settings.crop.width, settings.crop.height];
+  const numbers = [info.duration, info.width, info.height, settings.speed, settings.fps, settings.resolution, settings.targetMB, settings.quality, settings.trimStart, settings.trimEnd, settings.crop.x, settings.crop.y, settings.crop.width, settings.crop.height, settings.gifWidth];
   if (!numbers.every(Number.isFinite)) throw new Error("A video setting is not a valid number.");
   if (info.duration <= 0 || info.width < 2 || info.height < 2) throw new Error("The video has invalid dimensions or duration.");
   if (settings.speed < 0.25 || settings.speed > 4) throw new Error("Choose a speed between 0.25× and 4×.");
@@ -19,7 +19,7 @@ export function geometry(info: MediaInfo, settings: VideoSettings) {
   const rotatedWidth = portraitRotation ? ch : cw, rotatedHeight = portraitRotation ? cw : ch;
   let scale = settings.resolution > 0 ? Math.min(1, settings.resolution / rotatedHeight) : 1;
   scale = Math.min(scale, Math.sqrt(LIMITS.pixels / (rotatedWidth * rotatedHeight)), 4096 / Math.max(rotatedWidth, rotatedHeight));
-  if (settings.format === "gif") scale = Math.min(scale, LIMITS.gifWidth / rotatedWidth);
+  if (settings.format === "gif") scale = Math.min(scale, clamp(settings.gifWidth, 64, LIMITS.gifWidth) / rotatedWidth);
   const width = Math.max(2, Math.floor(rotatedWidth * scale / 2) * 2);
   const height = Math.max(2, Math.floor(rotatedHeight * scale / 2) * 2);
   const duration = (end - start) / settings.speed;

@@ -1,6 +1,6 @@
 # Developer Tools
 
-Eleven native Next.js routes share the existing Game Asset Toolkit theme and registry.
+Eleven Next.js pages share the site theme, the tool registry and the standard `ToolPage` template.
 All input processing is browser-side. There are no API routes, server actions,
 external processing calls, analytics or user-content storage added by this suite.
 
@@ -9,32 +9,31 @@ external processing calls, analytics or user-content storage added by this suite
 ```
 src/lib/tools.ts                    Registry, discovery, categories and developer groups
 src/lib/dev/                       Pure parsers, transformations and cryptographic helpers
-src/components/dev/                Shared shell, editors, output, actions and controls
+src/components/dev/                Workspace shell (toolbar, shortcuts), editors, output, actions and controls
 src/tools/developer/<tool>/         Each tool's client and optional worker
-src/app/tools/dev/<route>/page.tsx  Thin server route with static metadata
+src/app/<tool-id>/page.tsx          Thin route: toolMetadata(id) + <ToolPage id>
 ```
 
-The common controls reuse the existing orange Toggle. The sidebar keeps the existing
-SegmentedControl for appearance. CSS uses the application's semantic theme variables.
+The common controls reuse the shared Toggle. CSS uses the color variables in src/app/globals.css.
 Panels adapt to available viewport width, with bounded code previews and scrollable output.
 Tools provide labeled controls and keyboard focus; Ctrl/Cmd+Enter processes where relevant,
 and Escape clears the focused tool. Tab always remains available for navigation.
 
 ## Routes and behavior
 
-| Route under `/tools/dev/` | Features |
+| Page | Features |
 | --- | --- |
-| `json-formatter` | 2 spaces / 4 spaces / tab / minify, stable key sorting, lossless numeric tokens, lazy tree, JSONPath copy, drag/drop, YAML/CSV/XML |
-| `json-validator` | Same strict worker parser, line/column diagnostics, tree and validated JSON |
-| `jwt-decoder` | Header/payload, registered claims, device-clock expiry, HS256/384/512, RS256/384/512, PS256 and ES256 signature verification |
-| `base64` | UTF-8, standard/URL-safe alphabet, optional padding, data URIs, exact decoded bytes, bounded raster preview |
-| `hash-generator` | MD5, SHA-1, SHA-256, SHA-384, SHA-512, text/file, comparison and cancellation |
-| `regex-tester` | JavaScript g/i/m/s/u/y, named/numbered captures, replacement tokens, highlights, pattern library, worker timeout |
-| `url-encode` | Component/full URI and form encoding, decoding and malformed-input errors |
-| `uuid-generator` | Cryptographically random UUID v4, up to 1,000 identifiers, text/JSON/CSV output |
-| `password-generator` | Secure unbiased random sampling, selected-group requirements, length/bulk controls and explicit reveal |
-| `timestamp` | Explicit seconds/milliseconds, UTC/local date parsing, current time, IANA display timezone |
-| `color-converter` | HEX/RGB/HSL/OKLCH, alpha, picker, copy each representation and sRGB gamut mapping |
+| `/json-formatter` | 2 spaces / 4 spaces / tab / minify, stable key sorting, lossless numeric tokens, lazy tree, JSONPath copy, drag/drop, YAML/CSV/XML |
+| `/json-validator` | Valid / Invalid banner first; same strict worker parser, line/column diagnostics, tree and validated JSON |
+| `/jwt-decoder` | Header/payload, registered claims, device-clock expiry, HS256/384/512, RS256/384/512, PS256 and ES256 signature verification |
+| `/base64-encode-decode` | UTF-8, standard/URL-safe alphabet, optional padding, data URIs, exact decoded bytes, bounded raster preview |
+| `/hash-generator` | MD5, SHA-1, SHA-256, SHA-384, SHA-512, text/file, comparison and cancellation |
+| `/regex-tester` | JavaScript g/i/m/s/u/y, named/numbered captures, replacement tokens, highlights, pattern library, worker timeout |
+| `/url-encode-decode` | Component/full URI and form encoding, decoding and malformed-input errors |
+| `/uuid-generator` | Cryptographically random UUID v4, up to 1,000 identifiers, text/JSON/CSV output |
+| `/password-generator` | Secure unbiased random sampling, selected-group requirements, length/bulk controls and explicit reveal |
+| `/unix-timestamp-converter` | Explicit seconds/milliseconds, UTC/local date parsing, current time, IANA display timezone |
+| `/color-converter` | HEX/RGB/HSL/OKLCH, alpha, picker, copy each representation and sRGB gamut mapping |
 
 ## Engineering decisions
 
