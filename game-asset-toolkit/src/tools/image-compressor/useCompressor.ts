@@ -5,7 +5,7 @@ import type { Result, Settings, WorkerResponse } from "./engine/core";
 
 export type Item = { id: string; file: File; path: string; state: "ready" | "queued" | "working" | "done" | "error" | "cancelled"; phase?: string; error?: string; result?: Result; settings?: Settings };
 export type InputFile = { file: File; path: string };
-export type ImportSummary = { added: number; duplicates: number; rejected: number; total: number; message: string };
+export type ImportSummary = { added: number; duplicates: number; rejected: number; total: number; message: string; ids: string[] };
 type Active = { worker: Worker; timer: ReturnType<typeof setTimeout>; abort: AbortController };
 const WORKER_URL = "/tools/image-compressor/v2/compress.worker.js";
 const fingerprint = (file: File, path: string) => JSON.stringify([path.replace(/\\/g, "/"), file.name, file.size, file.lastModified]);
@@ -109,17 +109,22 @@ export function useCompressor() {
     update(list => [...list, ...accepted]);
     const total = itemsRef.current.length;
     const message = [accepted.length ? `${accepted.length} image${accepted.length === 1 ? "" : "s"} added.` : "No new images added.", duplicates ? `${duplicates} already attached; duplicates skipped.` : "", rejected ? `${rejected} skipped: up to 20 MB per image, 100 images and 200 MiB per session.` : "", `${total} in your queue.`].filter(Boolean).join(" ");
-    const summary = { added: accepted.length, duplicates, rejected, total, message };
+    const summary = { added: accepted.length, duplicates, rejected, total, message, ids: accepted.map(x => x.id) };
     setImportSummary(summary); setNotice(message); return summary;
   }, [update]);
+  /** Compress every item, or just `ids`. Named items join a running batch with its settings. */
   const start = useCallback((ids?: string[]) => {
-    if (active.current.size || pending.current.length) return;
-    try { runSettings.current = validateSettings(settings); } catch (e) { setNotice((e as Error).message); return; }
-    pending.current = itemsRef.current.filter(x => !ids || ids.includes(x.id)).map(x => x.id);
-    if (!pending.current.length) return;
-    const selected = new Set(pending.current);
+    const running = active.current.size > 0 || pending.current.length > 0;
+    if (running && !ids) return;
+    if (!running) { try { runSettings.current = validateSettings(settings); } catch (e) { setNotice((e as Error).message); return; } }
+    const inFlight = new Set([...pending.current, ...active.current.keys()]);
+    const next = itemsRef.current.filter(x => (!ids || ids.includes(x.id)) && !inFlight.has(x.id)).map(x => x.id);
+    if (!next.length) return;
+    pending.current.push(...next);
+    const selected = new Set(next);
     update(list => list.map(x => selected.has(x.id) ? { ...x, state: "queued", result: undefined, error: undefined, settings: { ...runSettings.current } } : x));
-    setNotice(""); pumpRef.current();
+    if (!ids) setNotice("");
+    pumpRef.current();
   }, [settings, update]);
   const cancel = useCallback((id?: string) => {
     const ids = id ? [id] : [...pending.current, ...active.current.keys()];

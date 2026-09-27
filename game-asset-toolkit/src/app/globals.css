@@ -2,42 +2,95 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * The only source of color in the app. Components use these variables
+ * (directly or through the Tailwind theme), never hard-coded palette values.
+ */
 :root {
+  color-scheme: light;
   --background: #fafafa;
   --foreground: #0a0a0a;
   --muted: #f4f4f5;
-  --muted-foreground: #71717a;
+  --muted-foreground: #63636b;
   --border: #e4e4e7;
+  --border-strong: #d4d4d8;
   --accent: #171717;
   --accent-foreground: #fafafa;
   --card: #ffffff;
   --card-foreground: #0a0a0a;
-  --sidebar: #fafafa;
-  --sidebar-border: #e4e4e7;
   --hover: #f4f4f5;
-  --orange: #FF6B00;
+
+  /* Brand. Orange with near-black text keeps primary buttons above WCAG AA (6.7:1). */
+  --orange: #ff6b00;
+  --brand: var(--orange);
+  --primary: var(--orange);
+  --primary-hover: #ff7d1f;
+  --primary-foreground: #1c0a00;
+  --primary-soft: #fff1e6;
+  /* Slightly deeper orange so focus rings keep 3:1 against the light background. */
+  --ring: #e05a00;
+
+  --success: #267347;
+  --danger: #b42331;
+  --warning: #946000;
+  --overlay: rgb(10 10 10 / 0.45);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.06);
+  --scrollbar: #d4d4d8;
+  --scrollbar-hover: #a1a1aa;
+  --selection: rgb(255 107 0 / 0.18);
+
+  /* Code: JSON syntax and regex match highlights. */
+  --syntax-key: #7652a3;
+  --syntax-string: #296449;
+  --syntax-number: #975200;
+  --syntax-literal: #35669d;
+  --highlight: #ffe1bd;
+  --highlight-foreground: #4d2800;
 }
 
 .dark {
+  color-scheme: dark;
   --background: #09090b;
   --foreground: #fafafa;
   --muted: #18181b;
   --muted-foreground: #a1a1aa;
   --border: #27272a;
+  --border-strong: #3f3f46;
   --accent: #fafafa;
   --accent-foreground: #09090b;
   --card: #111113;
   --card-foreground: #fafafa;
-  --sidebar: #09090b;
-  --sidebar-border: #27272a;
   --hover: #18181b;
-  --orange: #FF6B00;
+
+  --primary-hover: #ff8534;
+  --primary-soft: #2a1608;
+  --ring: #ff7a1a;
+
+  --success: #80d5a2;
+  --danger: #ff9ca8;
+  --warning: #f1c575;
+  --overlay: rgb(0 0 0 / 0.6);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.35);
+  --scrollbar: #3f3f46;
+  --scrollbar-hover: #52525b;
+  --selection: rgb(255 122 26 / 0.3);
+
+  --syntax-key: #c6a8ec;
+  --syntax-string: #91c5ab;
+  --syntax-number: #e4b982;
+  --syntax-literal: #8eb7e6;
+  --highlight: #623c1d;
+  --highlight-foreground: #ffe1bd;
 }
 
 * {
   box-sizing: border-box;
   padding: 0;
   margin: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 html,
@@ -51,7 +104,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -62,39 +114,35 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d4d4d8;
+  background: var(--scrollbar);
   border-radius: 3px;
 }
 
-.dark ::-webkit-scrollbar-thumb {
-  background: #3f3f46;
-}
-
 ::-webkit-scrollbar-thumb:hover {
-  background: #a1a1aa;
+  background: var(--scrollbar-hover);
 }
 
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #52525b;
-}
-
-/* Selection */
 ::selection {
-  background: rgba(23, 23, 23, 0.12);
-  color: #0a0a0a;
+  background: var(--selection);
+  color: var(--foreground);
 }
 
-.dark ::selection {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fafafa;
-}
-
-/* Focus */
 :focus-visible {
-  outline: 2px solid #171717;
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
 
-.dark :focus-visible {
-  outline-color: #fafafa;
+input[type="range"] {
+  accent-color: var(--ring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

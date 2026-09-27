@@ -17,7 +17,7 @@ export default function UrlTool() {
     catch (error) { return { value: '', error: errorMessage(error) }; }
   }, [deferred, direction, mode, plus]);
   const clear = () => setInput('');
-  return <ToolShell toolId="url-encode" onClear={clear} actions={<ActionBar onClear={clear} output={result.value} filename="url-result.txt" />}>
+  return <ToolShell toolId="url-encode-decode" onClear={clear} actions={<ActionBar onClear={clear} output={result.value} filename="url-result.txt" />}>
     <div className={s.options}>
       <Segments label="Operation" value={direction} onChange={setDirection} options={[{ value: 'encode', label: 'Encode' }, { value: 'decode', label: 'Decode' }]} />
       <Segments label="Encoding scope" value={mode} onChange={setMode} options={[{ value: 'component', label: 'Component' }, { value: 'uri', label: 'Full URL' }]} />

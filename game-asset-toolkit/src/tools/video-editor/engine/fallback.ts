@@ -62,12 +62,20 @@ async function mount(ffmpeg: FFmpeg, file: File) {
 }
 
 interface Probe { format?: { duration?: string; format_name?: string }; streams?: { codec_type?: string; codec_name?: string; width?: number; height?: number; channels?: number; sample_aspect_ratio?: string; avg_frame_rate?: string; duration?: string; sample_rate?: string; nb_read_packets?: string; side_data_list?: { rotation?: number }[]; color_transfer?: string; color_primaries?: string }[] }
-async function readProbe(ffmpeg: FFmpeg, path: string, countPackets = false): Promise<Probe> {
+async function readProbe(ffmpeg: FFmpeg, path: string, countPackets = false, unreadable = "This file could not be read. It may be damaged, encrypted or unsupported by the bundled codecs."): Promise<Probe> {
   await ffmpeg.deleteFile("/probe.json").catch(() => undefined);
-  const code = await ffmpeg.ffprobe(["-v", "error", ...(countPackets ? ["-count_packets"] : []), "-show_format", "-show_streams", "-of", "json", path, "-o", "/probe.json"], 30_000);
-  if (code !== 0) throw new Error("This file could not be read. It may be damaged, encrypted or unsupported by the bundled codecs.");
-  const text = await ffmpeg.readFile("/probe.json", "utf8");
-  return JSON.parse(typeof text === "string" ? text : new TextDecoder().decode(text)) as Probe;
+  // @ffmpeg/core 0.12.x leaves ffprobe's return code at -1 even when it succeeds,
+  // so judge the written report instead of the code.
+  await ffmpeg.ffprobe(["-v", "error", ...(countPackets ? ["-count_packets"] : []), "-show_format", "-show_streams", "-of", "json", path, "-o", "/probe.json"], 30_000);
+  let probe: Probe;
+  try {
+    const text = await ffmpeg.readFile("/probe.json", "utf8");
+    probe = JSON.parse(typeof text === "string" ? text : new TextDecoder().decode(text)) as Probe;
+  } catch {
+    throw new Error(unreadable);
+  }
+  if (!probe.format && !probe.streams?.length) throw new Error(unreadable);
+  return probe;
 }
 
 function probeDuration(probe: Probe): number {
@@ -185,7 +193,7 @@ export async function fallbackExport(request: ExportRequest, onProgress: (update
     const data = await ffmpeg.readFile(name);
     if (typeof data === "string" || !data.byteLength) throw new Error("The encoder produced no output.");
     if (data.byteLength >= LIMITS.ffmpegOutput * 0.98) throw new Error("Output reached the compatibility memory limit and may be incomplete. Lower the target size or shorten the clip.");
-    const check = await readProbe(ffmpeg, name, s.format === "aac");
+    const check = await readProbe(ffmpeg, name, s.format === "aac", "The exported file could not be verified, so it was discarded. Try again, or choose MP4 or a shorter clip.");
     const aac = s.format === "aac" ? check.streams?.find((stream) => stream.codec_type === "audio") : undefined;
     // ADTS has no duration header; bitrate-based duration guesses are unreliable.
     // Our AAC-LC encoder writes 1024 samples per packet, so count packets instead.

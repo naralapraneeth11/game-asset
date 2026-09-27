@@ -1,12 +1,18 @@
 import { Zip, ZipPassThrough, strToU8 } from "fflate";
-import { safePath, savings } from "./engine/core";
+import { formatOfMime, safePath, savings } from "./engine/core";
+import type { Format } from "./engine/core";
 import type { Item } from "./useCompressor";
 export function download(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob), link = document.createElement("a");
   link.href = url; link.download = filename; document.body.appendChild(link); link.click(); link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
-export function downloadItem(item: Item) { if (item.result && item.settings) download(item.result.blob, safePath(item.file.name, item.settings.format, new Set())); }
+/** The format actually written, which differs per file when keeping original formats. */
+export function outputFormat(item: Item): Format {
+  const format = item.settings?.format;
+  return formatOfMime(item.result?.blob.type || "") ?? (format && format !== "original" ? format : "webp");
+}
+export function downloadItem(item: Item) { if (item.result && item.settings) download(item.result.blob, safePath(item.file.name, outputFormat(item), new Set())); }
 export async function downloadZip(items: Item[], onProgress: (n: number) => void, signal: AbortSignal) {
   const ready = items.filter(x => x.result && x.settings);
   if (!ready.length) throw new Error("Compress an image first.");
@@ -28,7 +34,7 @@ export async function downloadZip(items: Item[], onProgress: (n: number) => void
     for (let i = 0; i < ready.length; i++) {
       if (signal.aborted) throw new Error("ZIP download cancelled.");
       const item = ready[i], result = item.result!, settings = item.settings!;
-      const name = safePath(item.path, settings.format, names), stream = new ZipPassThrough(name);
+      const name = safePath(item.path, outputFormat(item), names), stream = new ZipPassThrough(name);
       zip.add(stream);
       for (let p = 0; p < result.blob.size; p += 256 * 1024) {
         if (signal.aborted) throw new Error("ZIP download cancelled.");
@@ -39,7 +45,7 @@ export async function downloadZip(items: Item[], onProgress: (n: number) => void
       onProgress(i + 1); await new Promise(resolve => setTimeout(resolve, 0));
     }
     const metadata = new ZipPassThrough("compression-report.json"); zip.add(metadata);
-    metadata.push(strToU8(JSON.stringify({ tool: "Game Asset Toolkit / Image Compressor", version: 1, files: report }, null, 2)), true); zip.end();
+    metadata.push(strToU8(JSON.stringify({ tool: "Image Compressor", version: 1, files: report }, null, 2)), true); zip.end();
     const blob = await done; if (signal.aborted) throw new Error("ZIP download cancelled.");
     download(blob, "compressed-images.zip");
   } finally { signal.removeEventListener("abort", abort); if (signal.aborted || failed) zip.terminate(); }

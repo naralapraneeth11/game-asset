@@ -1,11 +1,13 @@
 export type Format = "jpeg" | "png" | "webp" | "avif" | "jxl";
+/** "original" keeps each image in its own format, so a PNG sprite stays a PNG. */
+export type OutputFormat = Format | "original";
 export type Settings = {
-  format: Format; quality: number; targetKB: number; minQuality: number;
+  format: OutputFormat; quality: number; targetKB: number; minQuality: number;
   maxWidth: number; maxHeight: number; matte: string;
   effort: "fast" | "balanced" | "thorough"; preservePngMetadata: boolean; autoResize: boolean;
 };
 export const DEFAULTS: Settings = {
-  format: "webp", quality: 80, targetKB: 0, minQuality: 35,
+  format: "original", quality: 80, targetKB: 0, minQuality: 35,
   maxWidth: 0, maxHeight: 0, matte: "#ffffff", effort: "balanced", preservePngMetadata: false, autoResize: true,
 };
 export const LIMITS = { file: 20_000_000, files: 100, batch: 200 * 1024 ** 2, output: 200 * 1024 ** 2, axis: 8000, sourceAxis: 16384, sourcePixels: 32_000_000, safeAxis: 4096, pixels: 8_000_000, timeout: 120_000 };
@@ -21,7 +23,7 @@ export type WorkerRequest = { id: string; file: File; settings: Settings; maxPix
 export type WorkerResponse = { type: "ready"; version: string } | { id: string; type: "phase"; phase: string } | { id: string; type: "result"; result: Result } | { id: string; type: "error"; message: string };
 
 export function validateSettings(value: Settings): Settings {
-  if (!Object.hasOwn(MIME, value.format)) throw new Error("Choose a supported output format.");
+  if (value.format !== "original" && !Object.hasOwn(MIME, value.format)) throw new Error("Choose a supported output format.");
   const integer = (n: number, low: number, high: number, name: string) => {
     if (!Number.isInteger(n) || n < low || n > high) throw new Error(`${name} must be a whole number from ${low} to ${high}.`);
   };
@@ -31,6 +33,27 @@ export function validateSettings(value: Settings): Settings {
   if (!["fast", "balanced", "thorough"].includes(value.effort)) throw new Error("Choose a valid effort.");
   if (value.targetKB && value.format === "png") throw new Error("Target size applies to lossy formats. PNG optimization preserves pixels.");
   return { ...value, preservePngMetadata: !!value.preservePngMetadata, autoResize: value.autoResize !== false };
+}
+/** Lossy presets. AVIF reaches the same visual quality at lower numbers. */
+export const PRESET_QUALITY = { smaller: 60, balanced: 80, quality: 92 } as const;
+export const AVIF_PRESET_QUALITY = { smaller: 40, balanced: 60, quality: 80 } as const;
+export type Preset = keyof typeof PRESET_QUALITY;
+
+/** Concrete settings for one image: "original" becomes the format detected from its bytes. */
+export function resolveFormat(settings: Settings, source: Exclude<Format, "jxl">): Settings & { format: Format } {
+  if (settings.format !== "original") return { ...settings, format: settings.format };
+  const preset = (Object.keys(PRESET_QUALITY) as Preset[]).find(key => PRESET_QUALITY[key] === settings.quality);
+  return {
+    ...settings,
+    format: source,
+    quality: source === "avif" && preset ? AVIF_PRESET_QUALITY[preset] : settings.quality,
+    // PNG output is lossless: there is no quality to search for a target size.
+    targetKB: source === "png" ? 0 : settings.targetKB,
+    preservePngMetadata: source === "png" && settings.preservePngMetadata,
+  };
+}
+export function formatOfMime(type: string): Format | null {
+  return (Object.keys(MIME) as Format[]).find(format => MIME[format] === type) ?? null;
 }
 export function fit(width: number, height: number, maxWidth: number, maxHeight: number) {
   const scale = Math.min(1, maxWidth > 0 ? maxWidth / width : 1, maxHeight > 0 ? maxHeight / height : 1);

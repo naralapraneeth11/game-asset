@@ -1,6 +1,6 @@
 /* Scoped to Image Compressor. Only public application assets are cached. */
 const PREFIX = 'gat-image-compressor-';
-const ROUTE = '/tools/image-compressor';
+const ROUTE = '/image-compressor';
 self.addEventListener('install', event => event.waitUntil(self.skipWaiting()));
 self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));
 self.addEventListener('message', event => {
@@ -40,7 +40,8 @@ self.addEventListener('fetch', event => {
   const request = event.request, url = new URL(request.url);
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
   const navigation = request.mode === 'navigate' && (url.pathname === ROUTE || url.pathname === ROUTE + '/');
-  const asset = url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/tools/image-compressor/v1/');
+  // Codec and worker files live under the versioned /tools/image-compressor/ asset folder.
+  const asset = url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/tools/image-compressor/');
   if (!navigation && !asset) return;
   event.respondWith((async () => {
     const names = (await caches.keys()).filter(key => key.startsWith(PREFIX));
@@ -50,7 +51,9 @@ self.addEventListener('fetch', event => {
         if (await cache.match('/tools/image-compressor/__ready')) { const value = await cache.match(navigation ? ROUTE : request); if (value) return value; }
       }
     };
-    if (asset) { const response = await cached(); if (response) return response; }
+    // Hashed Next.js chunks never change, so serve them from cache. Codec and worker files keep
+    // their versioned path across deploys, so prefer the network and fall back to cache offline.
+    if (url.pathname.startsWith('/_next/static/')) { const response = await cached(); if (response) return response; }
     try { return await fetch(request); }
     catch (error) { const response = await cached(); if (response) return response; throw error; }
   })());

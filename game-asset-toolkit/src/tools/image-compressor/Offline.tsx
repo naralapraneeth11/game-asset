@@ -2,7 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Download, WifiOff } from "lucide-react";
 import styles from "./ImageCompressor.module.css";
-const SCOPE = "/tools/image-compressor";
+// Must match ROUTE in engine/offline-sw.js and the page route in src/app/image-compressor/.
+const SCOPE = "/image-compressor";
 export default function Offline({ onNotice }: { onNotice: (message: string) => void }) {
   const [status, setStatus] = useState<"idle" | "preparing" | "ready">("idle"), alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);

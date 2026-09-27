@@ -4,7 +4,7 @@
  * TexturePacker-compatible metadata for Phaser / Pixi / Unity / Godot
  */
 
-export const VERSION = "2.1.1";
+export const VERSION = "2.2.0";
 export const APP_NAME = "CustomSpritePacker";
 
 export type Heuristic = "BSSF" | "BAF" | "CP";
@@ -353,10 +353,19 @@ class MaxRectsPacker {
     return placement;
   }
 
-  getEfficiency() {
-    const total = this.atlasWidth * this.atlasHeight;
+  /** Percent of `width` × `height` (default: the whole atlas) covered by sprites. */
+  getEfficiency(width = this.atlasWidth, height = this.atlasHeight) {
+    const total = width * height;
     const used = this.placed.reduce((s, p) => s + p.w * p.h, 0);
     return (used / total) * 100;
+  }
+
+  /** The smallest rectangle from the origin that contains every placed sprite. */
+  getUsedBounds() {
+    return this.placed.reduce(
+      (bounds, p) => ({ w: Math.max(bounds.w, p.x + p.w), h: Math.max(bounds.h, p.y + p.h) }),
+      { w: 1, h: 1 }
+    );
   }
 }
 
@@ -486,6 +495,17 @@ class TextureCompositor {
     this.ctx.rotate(Math.PI / 2);
     this.ctx.drawImage(tempCanvas as CanvasImageSource, 0, 0);
     this.ctx.restore();
+  }
+
+  /** Crop to the top-left `width` × `height`, dropping unused atlas space. */
+  trim(width: number, height: number) {
+    if (width === this.canvas.width && height === this.canvas.height) return;
+    const next = new TextureCompositor(width, height);
+    next.ctx.drawImage(this.canvas as CanvasImageSource, 0, 0);
+    this.canvas.width = 1;
+    this.canvas.height = 1;
+    this.canvas = next.canvas;
+    this.ctx = next.ctx;
   }
 
   async export(format: OutputFormat = "png", quality = 0.92): Promise<Blob> {
@@ -786,13 +806,20 @@ export class SpritePacker {
         );
       }
 
+      // Shrink the page to the area the sprites use (rounded up to a power of
+      // two when requested), so a few small sprites do not ship a 2048² sheet.
+      const used = packer.getUsedBounds();
+      const pageWidth = Math.min(atlasWidth, this.config.powerOfTwo ? Utils.nextPowerOfTwo(used.w) : used.w);
+      const pageHeight = Math.min(atlasHeight, this.config.powerOfTwo ? Utils.nextPowerOfTwo(used.h) : used.h);
+      compositor.trim(pageWidth, pageHeight);
+
       const imageName = `sheet_${String(currentPage + 1).padStart(2, "0")}.${this.config.format}`;
       const blob = await compositor.export(this.config.format, this.config.quality);
       const metadata = this.metadataExporter.export(
         pageFrames,
         imageName,
-        atlasWidth,
-        atlasHeight
+        pageWidth,
+        pageHeight
       );
 
       atlases.push({
@@ -801,7 +828,7 @@ export class SpritePacker {
         imageName,
         metadata,
         frames: pageFrames,
-        efficiency: packer.getEfficiency(),
+        efficiency: packer.getEfficiency(pageWidth, pageHeight),
         canvas: compositor.canvas,
       });
 
