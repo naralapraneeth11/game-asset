@@ -29,7 +29,7 @@ export function ToolPage({ id, children, width = "default" }: { id: ToolId; chil
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(toolJsonLd(tool)) }} />
       <div className={container}>
         {tool.status !== "live" && (
-          <p role="note" className="mt-4 rounded-xl border border-dashed border-[var(--warning)] px-4 py-3 text-sm text-[var(--warning)]">
+          <p role="note" className="mt-4 rounded-xl border border-dashed border-[var(--warning)] px-4 py-3 text-sm text-warning">
             Hidden tool: off navigation and the sitemap, and returns 404 in production until its engine ships.
           </p>
         )}
@@ -61,7 +61,7 @@ export function ToolPage({ id, children, width = "default" }: { id: ToolId; chil
           </section>
 
           <section aria-labelledby="privacy" className="rounded-2xl border border-border bg-card p-5 sm:p-6">
-            <h2 id="privacy" className="flex items-center gap-2 text-base font-semibold"><ShieldCheck className="h-4 w-4 text-[var(--ring)]" aria-hidden />Private by design</h2>
+            <h2 id="privacy" className="flex items-center gap-2 text-base font-semibold"><ShieldCheck className="h-4 w-4 text-accent-text" aria-hidden />Private by design</h2>
             <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">{privacyNote}</p>
           </section>
 

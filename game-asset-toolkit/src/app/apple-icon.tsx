@@ -8,9 +8,9 @@ export const contentType = "image/png";
 export default function AppleIcon() {
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#FF6B00" }}>
+      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#FF6A00" }}>
         <svg width="132" height="132" viewBox="0 0 32 32">
-          <path d={LOGO_PATH} fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={LOGO_PATH} fill="none" stroke="#160A00" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
     ),

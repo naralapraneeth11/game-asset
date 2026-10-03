@@ -23,9 +23,9 @@ function Saved({ before, after, className }: { before: number; after: number; cl
   const saved = percentSaved(before, after);
   if (!before) return null;
   return saved >= 0.5
-    ? <span className={cn("font-medium text-[var(--success)]", className)}>{saved.toFixed(0)}% smaller</span>
+    ? <span className={cn("font-medium text-success", className)}>{saved.toFixed(0)}% smaller</span>
     : saved <= -0.5
-      ? <span className={cn("font-medium text-[var(--warning)]", className)}>{Math.abs(saved).toFixed(0)}% larger</span>
+      ? <span className={cn("font-medium text-warning", className)}>{Math.abs(saved).toFixed(0)}% larger</span>
       : <span className={cn("text-muted-foreground", className)}>About the same size</span>;
 }
 
@@ -51,7 +51,7 @@ export function ResultList({ items, onDownloadAll, downloadAllBusy, footer, titl
     <section aria-label="Results" className="overflow-hidden rounded-2xl border border-border bg-card">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-4 border-b border-border px-5 py-5">
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
+          <p className="eyebrow">{title}</p>
           {compare ? (
             <p className="mt-1 flex flex-wrap items-center gap-x-2 text-xl font-semibold tracking-tight tabular-nums">
               <span className="text-muted-foreground line-through decoration-1">{formatBytes(before)}</span>

@@ -6,81 +6,116 @@
  * The only source of color in the app. Components use these variables
  * (directly or through the Tailwind theme), never hard-coded palette values.
  */
+/*
+ * The design system: the only source of color in the app.
+ *
+ * Two visual themes, Light and Dark ("System" just picks one). Orange is the
+ * only chromatic color; everything else is a warm neutral. Status colors and
+ * code highlighting are mapped onto orange and neutrals too: before adding any
+ * other hue, ask whether it can be orange, and if not, use a neutral.
+ */
 :root {
   color-scheme: light;
-  --background: #fafafa;
-  --foreground: #0a0a0a;
-  --muted: #f4f4f5;
-  --muted-foreground: #63636b;
-  --border: #e4e4e7;
-  --border-strong: #d4d4d8;
-  --accent: #171717;
-  --accent-foreground: #fafafa;
-  --card: #ffffff;
-  --card-foreground: #0a0a0a;
-  --hover: #f4f4f5;
 
-  /* Brand. Orange with near-black text keeps primary buttons above WCAG AA (6.7:1). */
-  --orange: #ff6b00;
-  --brand: var(--orange);
-  --primary: var(--orange);
-  --primary-hover: #ff7d1f;
-  --primary-foreground: #1c0a00;
-  --primary-soft: #fff1e6;
-  /* Slightly deeper orange so focus rings keep 3:1 against the light background. */
+  /* Warm stone neutrals */
+  --background: #edece8;
+  --surface: #f7f6f3;
+  --surface-elevated: #ffffff;
+  --muted: #e4e3de;
+  --hover: #efeeea;
+  --foreground: #161616;
+  --muted-foreground: #5c5a55;
+  --border: #dcdbd5;
+  --border-subtle: #e6e5e0;
+  --border-strong: #c4c3bd;
+
+  /* Snap Orange */
+  --accent: #ff6a00;
+  --accent-hover: #f26200;
+  --accent-active: #db5700;
+  /* Near-black on orange: 6.9:1. White on this orange would fail contrast. */
+  --accent-foreground: #160a00;
+  --accent-soft: #ffe7d4;
+  /* Orange dark enough for small text and icons on the light surfaces (4.7:1). */
+  --accent-text: #b04600;
+  /* Focus rings keep 3:1 against the page. */
   --ring: #e05a00;
 
-  --success: #267347;
-  --danger: #b42331;
-  --warning: #946000;
-  --overlay: rgb(10 10 10 / 0.45);
-  --shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.06);
-  --scrollbar: #d4d4d8;
-  --scrollbar-hover: #a1a1aa;
-  --selection: rgb(255 107 0 / 0.18);
+  /* Status, inside the orange + neutral system */
+  --success: var(--accent-text);
+  --warning: var(--accent-text);
+  --danger: #9c2f00;
 
-  /* Code: JSON syntax and regex match highlights. */
-  --syntax-key: #7652a3;
-  --syntax-string: #296449;
-  --syntax-number: #975200;
-  --syntax-literal: #35669d;
-  --highlight: #ffe1bd;
-  --highlight-foreground: #4d2800;
+  /* Code: JSON syntax and regex match highlights */
+  --syntax-key: #161616;
+  --syntax-string: #b04600;
+  --syntax-number: #7a4a22;
+  --syntax-literal: #5c5a55;
+  --highlight: #ffd9bd;
+  --highlight-foreground: #3a1a00;
+
+  --overlay: rgb(22 20 18 / 0.4);
+  --shadow: 0 1px 2px rgb(40 32 20 / 0.05), 0 12px 32px rgb(40 32 20 / 0.08);
+  --scrollbar: #cfcec8;
+  --scrollbar-hover: #a8a6a0;
+  --selection: rgb(255 106 0 / 0.22);
+
+  /* Geometry, shared by every component */
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  /* Aliases kept for existing components */
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --brand: var(--accent);
+  --orange: var(--accent);
+  --primary: var(--accent);
+  --primary-hover: var(--accent-hover);
+  --primary-foreground: var(--accent-foreground);
+  --primary-soft: var(--accent-soft);
 }
 
 .dark {
   color-scheme: dark;
-  --background: #09090b;
-  --foreground: #fafafa;
-  --muted: #18181b;
-  --muted-foreground: #a1a1aa;
-  --border: #27272a;
-  --border-strong: #3f3f46;
-  --accent: #fafafa;
-  --accent-foreground: #09090b;
-  --card: #111113;
-  --card-foreground: #fafafa;
-  --hover: #18181b;
 
-  --primary-hover: #ff8534;
-  --primary-soft: #2a1608;
+  /* Warm charcoal, built from neighbouring tones rather than pure black */
+  --background: #1c1b1a;
+  --surface: #242322;
+  --surface-elevated: #2c2b29;
+  --muted: #302f2c;
+  --hover: #2e2d2b;
+  --foreground: #f2f1ee;
+  --muted-foreground: #aba8a2;
+  --border: #383735;
+  --border-subtle: #2f2e2c;
+  --border-strong: #4d4b47;
+
+  --accent: #ff6a00;
+  --accent-hover: #ff7d24;
+  --accent-active: #e85f00;
+  --accent-foreground: #160a00;
+  --accent-soft: #3a2415;
+  --accent-text: #ff9045;
   --ring: #ff7a1a;
 
-  --success: #80d5a2;
-  --danger: #ff9ca8;
-  --warning: #f1c575;
-  --overlay: rgb(0 0 0 / 0.6);
-  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.35);
-  --scrollbar: #3f3f46;
-  --scrollbar-hover: #52525b;
-  --selection: rgb(255 122 26 / 0.3);
+  --success: var(--accent-text);
+  --warning: var(--accent-text);
+  --danger: #ff8a5c;
 
-  --syntax-key: #c6a8ec;
-  --syntax-string: #91c5ab;
-  --syntax-number: #e4b982;
-  --syntax-literal: #8eb7e6;
-  --highlight: #623c1d;
-  --highlight-foreground: #ffe1bd;
+  --syntax-key: #f2f1ee;
+  --syntax-string: #ff9a55;
+  --syntax-number: #e8b48a;
+  --syntax-literal: #aba8a2;
+  --highlight: #5a2f10;
+  --highlight-foreground: #ffe2cc;
+
+  --overlay: rgb(0 0 0 / 0.55);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 32px rgb(0 0 0 / 0.35);
+  --scrollbar: #45433f;
+  --scrollbar-hover: #5c5a55;
+  --selection: rgb(255 122 26 / 0.32);
 }
 
 * {
@@ -132,8 +167,20 @@ body {
   outline-offset: 2px;
 }
 
-input[type="range"] {
-  accent-color: var(--ring);
+input[type="range"],
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--accent);
+}
+
+/* Small uppercase mono label, as used for section eyebrows. */
+.eyebrow {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
 }
 
 @media (prefers-reduced-motion: reduce) {

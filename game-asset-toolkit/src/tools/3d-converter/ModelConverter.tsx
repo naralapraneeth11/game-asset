@@ -63,7 +63,7 @@ export default function ModelConverter() {
             onClick={() => setAutoRepair(!autoRepair)}
             className={cn(
               "relative h-5 w-9 rounded-full transition-colors",
-              autoRepair ? "bg-[#FF6B00]" : "bg-neutral-200 dark:bg-neutral-700"
+              autoRepair ? "bg-accent" : "bg-neutral-200 dark:bg-neutral-700"
             )}
           >
             <span

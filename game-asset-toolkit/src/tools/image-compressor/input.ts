@@ -28,8 +28,8 @@ export async function sampleImage(): Promise<File> {
   const fill = context.createLinearGradient(0, 0, 768, 512); fill.addColorStop(0, "#ffc685"); fill.addColorStop(1, "#d67850");
   context.fillStyle = fill; context.fillRect(0, 0, 768, 512);
   context.fillStyle = "#f5e9d6"; context.beginPath(); context.arc(548, 190, 102, 0, Math.PI * 2); context.fill();
-  context.fillStyle = "#433d40"; context.beginPath(); context.moveTo(0, 420); context.lineTo(230, 175); context.lineTo(485, 512); context.lineTo(0, 512); context.fill();
-  context.fillStyle = "#746369"; context.beginPath(); context.moveTo(260, 512); context.lineTo(530, 285); context.lineTo(768, 512); context.fill();
+  context.fillStyle = "#2b2622"; context.beginPath(); context.moveTo(0, 420); context.lineTo(230, 175); context.lineTo(485, 512); context.lineTo(0, 512); context.fill();
+  context.fillStyle = "#6b625a"; context.beginPath(); context.moveTo(260, 512); context.lineTo(530, 285); context.lineTo(768, 512); context.fill();
   context.fillStyle = "#fff5e9"; context.font = "500 21px system-ui"; context.fillText("GAME ASSET TOOLKIT", 36, 52);
   const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(new Error("Could not create sample.")), "image/png"));
   canvas.width = canvas.height = 1;

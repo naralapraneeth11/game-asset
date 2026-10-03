@@ -7,7 +7,7 @@ import { convertColor } from '@/lib/dev/color';
 import { errorMessage } from '@/lib/dev/browser';
 
 export default function ColorTool() {
-  const [input, setInput] = useState('#FF6B00');
+  const [input, setInput] = useState('#FF6A00');
   const result = useMemo(() => {
     if (!input.trim()) return { data: null, error: '' };
     try { return { data: convertColor(input), error: '' }; }
@@ -32,9 +32,9 @@ export default function ColorTool() {
         </div>
         <div className={s.row}>
           <Field label="Choose a color"><input type="color" aria-label="Choose a color" value={data?.hex.slice(0, 7) ?? '#000000'} onChange={event => { const a = data?.color.a ?? 1; setInput(event.target.value + (a < 1 ? Math.round(a * 255).toString(16).padStart(2, '0') : '')); }} style={{ width: 64, height: 42, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8, padding: 4, cursor: 'pointer' }} /></Field>
-          <Field label={`Opacity · ${Math.round((data?.color.a ?? 1) * 100)}%`}><input aria-label="Color opacity" type="range" min={0} max={100} step={1} disabled={!data} value={Math.round((data?.color.a ?? 1) * 100)} onChange={event => alpha(event.target.value)} style={{ accentColor: '#FF6B00', width: '100%' }} /></Field>
+          <Field label={`Opacity · ${Math.round((data?.color.a ?? 1) * 100)}%`}><input aria-label="Color opacity" type="range" min={0} max={100} step={1} disabled={!data} value={Math.round((data?.color.a ?? 1) * 100)} onChange={event => alpha(event.target.value)} style={{ accentColor: '#FF6A00', width: '100%' }} /></Field>
         </div>
-        <div className={s.row}>{['#FF6B00', '#747AEE80', 'oklch(0.72 0.25 150)'].map(example => <Button key={example} variant="ghost" onClick={() => setInput(example)}>{example}</Button>)}</div>
+        <div className={s.row}>{['#FF6A00', '#1C1B1A80', 'oklch(0.72 0.25 150)'].map(example => <Button key={example} variant="ghost" onClick={() => setInput(example)}>{example}</Button>)}</div>
       </div></section>
       <div className={s.stack}>
         {formats.length ? formats.map(([label, value]) => <section className={s.panel} key={label}><div className={s.panelHeader}><strong>{label}</strong><CopyButton text={value} /></div><div className={s.panelBody}><code className={s.code} style={{ overflowWrap: 'anywhere' }}>{value}</code></div></section>) : <section className={s.panel}><div className={s.panelBody}><p className={s.muted}>Enter a color to see all four formats.</p></div></section>}

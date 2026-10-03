@@ -204,7 +204,7 @@ export default function VideoTask({ mode }: { mode: VideoTaskMode }) {
 
       {(localError || editor.error) && (
         <div role="alert" className="flex gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--danger)_45%,var(--border))] bg-[color-mix(in_srgb,var(--danger)_6%,var(--card))] px-4 py-3.5 text-sm">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--danger)]" aria-hidden />
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-danger" aria-hidden />
           <p className="leading-relaxed">{localError || editor.error}</p>
         </div>
       )}
@@ -309,7 +309,7 @@ function FileQueue({ items, busy, selectedId, onSelect, onRemove, onClear, child
           const content = (
             <>
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                {item.status === "reading" || item.status === "processing" ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : item.status === "done" ? <Check className="h-4 w-4 text-[var(--success)]" aria-hidden /> : item.status === "error" ? <AlertCircle className="h-4 w-4 text-[var(--danger)]" aria-hidden /> : <Film className="h-4 w-4" aria-hidden />}
+                {item.status === "reading" || item.status === "processing" ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : item.status === "done" ? <Check className="h-4 w-4 text-success" aria-hidden /> : item.status === "error" ? <AlertCircle className="h-4 w-4 text-danger" aria-hidden /> : <Film className="h-4 w-4" aria-hidden />}
               </span>
               <span className="min-w-0 flex-1 text-left">
                 <span className="block truncate text-sm font-medium" title={item.file.name}>{item.file.name}</span>
@@ -334,7 +334,7 @@ function FileQueue({ items, busy, selectedId, onSelect, onRemove, onClear, child
                   <div className={cn("h-full rounded-full bg-primary transition-[width]", item.progress == null && "w-1/3 animate-pulse")} style={item.progress == null ? undefined : { width: `${Math.max(2, Math.min(100, item.progress * 100))}%` }} />
                 </div>
               )}
-              {item.error && <p className="ml-12 mt-1.5 text-[13px] leading-relaxed text-[var(--danger)]">{item.error}</p>}
+              {item.error && <p className="ml-12 mt-1.5 text-[13px] leading-relaxed text-danger">{item.error}</p>}
             </li>
           );
         })}
@@ -357,7 +357,7 @@ function PrimaryBar({ busy, active, message, label, disabled, onRun, onCancel, p
   if (busy) {
     return (
       <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-border bg-card px-4 py-3.5 sm:px-5">
-        <LoaderCircle className="h-5 w-5 shrink-0 animate-spin text-[var(--ring)]" aria-hidden />
+        <LoaderCircle className="h-5 w-5 shrink-0 animate-spin text-accent-text" aria-hidden />
         <div className="min-w-0 flex-1" role="status" aria-live="polite">
           <p className="text-sm font-medium">{progressLabel || "Working…"}</p>
           <p className="truncate text-[13px] text-muted-foreground">{active?.phase || message || "Loading the video engine…"} · Keep this tab open.</p>
@@ -392,7 +392,7 @@ function ClipRange({ item, settings, setStart, setEnd, disabled }: { item: Queue
       <div className="flex flex-col gap-4">
         <div>
           <h2 className="text-sm font-medium">Choose the part to loop</h2>
-          <p className={cn("mt-1 text-[13px] tabular-nums", tooLong ? "text-[var(--danger)]" : "text-muted-foreground")}>
+          <p className={cn("mt-1 text-[13px] tabular-nums", tooLong ? "text-danger" : "text-muted-foreground")}>
             {length.toFixed(1)} s selected · {LIMITS.gifSeconds} s max
           </p>
         </div>

@@ -22,7 +22,7 @@ export function Footer() {
           <p className="mt-4 text-xs text-muted-foreground">No upload · No sign-up · Free</p>
         </div>
         <nav aria-label="Tool categories">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tools</h2>
+          <h2 className="eyebrow">Tools</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {categories.map((category) => (
               <li key={category.id}>
@@ -32,7 +32,7 @@ export function Footer() {
           </ul>
         </nav>
         <nav aria-label="Site">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{site.name}</h2>
+          <h2 className="eyebrow">{site.name}</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {siteLinks.map((link) => (
               <li key={link.href}>

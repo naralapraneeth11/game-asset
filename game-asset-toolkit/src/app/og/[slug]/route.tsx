@@ -53,27 +53,27 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
 
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "64px 72px", background: "#0b0b0d", color: "#fafafa", fontFamily: "sans-serif" }}>
+      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "64px 72px", background: "#1c1b1a", color: "#f2f1ee", fontFamily: "sans-serif" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
           <svg width="56" height="56" viewBox="0 0 32 32">
-            <rect width="32" height="32" rx="8" fill="#FF6B00" />
-            <path d={LOGO_PATH} fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
+            <rect width="32" height="32" rx="8" fill="#FF6A00" />
+            <path d={LOGO_PATH} fill="none" stroke="#160A00" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: 4 }}>{site.name}</div>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 56 }}>
           <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-            <div style={{ fontSize: 26, color: "#FF8A3D", marginBottom: 18 }}>{content.eyebrow}</div>
+            <div style={{ fontSize: 26, color: "#FF9045", marginBottom: 18 }}>{content.eyebrow}</div>
             <div style={{ fontSize: content.title.length > 28 ? 64 : 80, fontWeight: 700, lineHeight: 1.05, letterSpacing: -2 }}>{content.title}</div>
-            <div style={{ fontSize: 32, color: "#a1a1aa", marginTop: 24, lineHeight: 1.35 }}>{content.subtitle}</div>
+            <div style={{ fontSize: 32, color: "#aba8a2", marginTop: 24, lineHeight: 1.35 }}>{content.subtitle}</div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 220, height: 220, borderRadius: 48, background: "#1a1a1d", border: "2px solid #27272a" }}>
-            {plain(<Icon size={112} color="#FF6B00" strokeWidth={1.75} />)}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 220, height: 220, borderRadius: 48, background: "#242322", border: "2px solid #383735" }}>
+            {plain(<Icon size={112} color="#FF6A00" strokeWidth={1.75} />)}
           </div>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 24, color: "#71717a" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 24, color: "#8a8781" }}>
           <div style={{ display: "flex" }}>No upload · No sign-up · Free</div>
           <div style={{ display: "flex" }}>{siteOrigin().host}</div>
         </div>

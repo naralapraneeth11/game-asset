@@ -134,7 +134,7 @@ export default function SpritePacker() {
 
       {error && (
         <div role="alert" className="flex gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--danger)_45%,var(--border))] bg-[color-mix(in_srgb,var(--danger)_6%,var(--card))] px-4 py-3.5 text-sm">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--danger)]" aria-hidden />
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-danger" aria-hidden />
           <p className="leading-relaxed">{error}</p>
         </div>
       )}
@@ -156,7 +156,7 @@ export default function SpritePacker() {
           {result.atlases.length > 1 && (
             <div className="flex flex-wrap gap-2 border-b border-border px-5 py-3" role="group" aria-label="Atlas page">
               {result.atlases.map((sheet, index) => (
-                <button key={sheet.imageName} type="button" aria-pressed={index === page} onClick={() => setPage(index)} className={cn("h-8 rounded-full border px-3 text-[13px]", index === page ? "border-[var(--ring)] bg-primary-soft" : "border-border hover:bg-hover")}>
+                <button key={sheet.imageName} type="button" aria-pressed={index === page} onClick={() => setPage(index)} className={cn("h-8 rounded-full border px-3 text-[13px]", index === page ? "border-accent bg-accent text-accent-foreground" : "border-border hover:bg-hover")}>
                   {sheet.imageName}
                 </button>
               ))}
@@ -201,7 +201,7 @@ export default function SpritePacker() {
             <p className="mb-2 text-sm font-medium" id="sp-size">Maximum atlas size</p>
             <div className="flex flex-wrap gap-2" role="radiogroup" aria-labelledby="sp-size">
               {ATLAS_SIZES.map((size) => (
-                <button key={size} type="button" role="radio" aria-checked={options.maxWidth === size} onClick={() => set("maxWidth", size)} className={cn("h-9 rounded-full border px-3.5 text-[13px] tabular-nums", options.maxWidth === size ? "border-[var(--ring)] bg-primary-soft font-medium" : "border-border hover:bg-hover")}>
+                <button key={size} type="button" role="radio" aria-checked={options.maxWidth === size} onClick={() => set("maxWidth", size)} className={cn("h-9 rounded-full border px-3.5 text-[13px] tabular-nums", options.maxWidth === size ? "border-accent bg-accent font-medium text-accent-foreground" : "border-border hover:bg-hover")}>
                   {size}
                 </button>
               ))}

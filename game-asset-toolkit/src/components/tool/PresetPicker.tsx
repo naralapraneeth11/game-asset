@@ -62,14 +62,14 @@ export function PresetPicker<T extends string | number>({ label, options, value,
               "border text-left transition-[border-color,background-color,box-shadow] disabled:cursor-not-allowed disabled:opacity-50",
               size === "lg" ? "rounded-2xl px-4 py-3.5" : "h-9 rounded-full px-4 text-[13px] font-medium",
               checked
-                ? "border-[var(--ring)] bg-primary-soft shadow-[0_0_0_1px_var(--ring)]"
-                : "border-border bg-card hover:border-border-strong",
+                ? "border-accent bg-accent text-accent-foreground"
+                : "border-border bg-surface hover:border-border-strong",
             )}
           >
             {size === "lg" ? (
               <>
                 <span className="block text-[15px] font-medium">{option.label}</span>
-                {option.hint && <span className="mt-0.5 block text-[13px] text-muted-foreground">{option.hint}</span>}
+                {option.hint && <span className={cn("mt-0.5 block text-[13px]", checked ? "text-accent-foreground/75" : "text-muted-foreground")}>{option.hint}</span>}
               </>
             ) : option.label}
           </button>
