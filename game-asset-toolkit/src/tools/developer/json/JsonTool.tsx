@@ -28,7 +28,7 @@ function ValidityBanner({ state, error, count }: { state: 'empty' | 'checking' |
   const tone = state === 'valid' ? 'border-[var(--success)] bg-[color-mix(in_srgb,var(--success)_8%,var(--card))]' : state === 'invalid' ? 'border-[var(--danger)] bg-[color-mix(in_srgb,var(--danger)_7%,var(--card))]' : 'border-border bg-card';
   const Icon = state === 'valid' ? CheckCircle2 : state === 'invalid' ? XCircle : state === 'checking' ? Loader2 : FileJson;
   return <div role="status" aria-live="polite" className={`flex items-start gap-4 rounded-2xl border-2 px-5 py-4 ${tone}`}>
-    <Icon className={`mt-0.5 h-7 w-7 shrink-0 ${state === 'valid' ? 'text-[var(--success)]' : state === 'invalid' ? 'text-[var(--danger)]' : 'text-muted-foreground'} ${state === 'checking' ? 'animate-spin' : ''}`} aria-hidden />
+    <Icon className={`mt-0.5 h-7 w-7 shrink-0 ${state === 'valid' ? 'text-success' : state === 'invalid' ? 'text-danger' : 'text-muted-foreground'} ${state === 'checking' ? 'animate-spin' : ''}`} aria-hidden />
     <div className="min-w-0">
       <p className="text-xl font-semibold tracking-tight">{state === 'valid' ? 'Valid JSON' : state === 'invalid' ? 'Invalid JSON' : state === 'checking' ? 'Checking…' : 'Paste JSON to check it'}</p>
       <p className="mt-1 break-words text-sm text-muted-foreground">{state === 'valid' ? `${(count ?? 0).toLocaleString()} values, well-formed according to RFC 8259.` : state === 'invalid' ? error : state === 'checking' ? 'Parsing in a background worker.' : 'Results update as you type. Drop a .json file up to 10 MB, or try the example.'}</p>

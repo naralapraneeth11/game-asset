@@ -54,8 +54,8 @@ export function DropZone({ accept, multiple = true, disabled, onFiles, onDropTra
         else if (event.dataTransfer.files.length) onFiles(Array.from(event.dataTransfer.files));
       }}
       className={cn(
-        "relative rounded-2xl border-2 border-dashed border-border bg-card transition-colors",
-        "data-[dragging]:border-[var(--ring)] data-[dragging]:bg-primary-soft",
+        "relative rounded-3xl border-2 border-dashed border-border-strong bg-surface transition-colors",
+        "data-[dragging]:border-accent data-[dragging]:bg-accent-soft",
         compact ? "flex flex-wrap items-center gap-3 px-4 py-3 sm:px-5" : "flex flex-col items-center px-6 py-12 text-center sm:py-16",
         className,
       )}

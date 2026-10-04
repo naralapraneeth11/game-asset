@@ -41,7 +41,7 @@ export function HomeDirectory() {
           aria-label="Search tools"
           autoComplete="off"
           spellCheck={false}
-          className="h-14 w-full rounded-2xl border border-border bg-card pl-12 pr-12 text-base shadow-card outline-none transition placeholder:text-muted-foreground focus-visible:outline-none focus:border-[var(--ring)] focus:ring-4 focus:ring-[var(--selection)] [&::-webkit-search-cancel-button]:hidden"
+          className="h-14 w-full rounded-2xl border border-border bg-surface-elevated pl-12 pr-12 text-base outline-none transition placeholder:text-muted-foreground focus-visible:outline-none focus:border-accent focus:ring-4 focus:ring-[var(--selection)] [&::-webkit-search-cancel-button]:hidden"
         />
         {query && (
           <button
@@ -74,7 +74,7 @@ export function HomeDirectory() {
         ) : (
           <>
             <section aria-labelledby="popular-heading">
-              <h2 id="popular-heading" className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Popular</h2>
+              <h2 id="popular-heading" className="mb-4 eyebrow">Popular</h2>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {popularTools.map((tool) => <ToolCard key={tool.id} tool={tool} />)}
               </div>

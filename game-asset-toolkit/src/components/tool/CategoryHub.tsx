@@ -25,7 +25,7 @@ export function CategoryHub({ id }: { id: ToolCategory }) {
       <div className="mt-10 space-y-10">
         {groups.map((group) => (
           <section key={group.name || "all"} aria-label={group.name || `${category.label} tools`}>
-            {group.name && <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{group.name}</h2>}
+            {group.name && <h2 className="mb-3 eyebrow">{group.name}</h2>}
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {group.tools.map((tool) => <ToolCard key={tool.id} tool={tool} />)}
             </div>

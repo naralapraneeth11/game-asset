@@ -16,13 +16,14 @@
 .primary, .button, .smallButton, .iconButton, .textButton { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--foreground); font-size: 12px !important; line-height: 1.4; font-weight: 550 !important; text-decoration: none; transition: background .15s, border-color .15s, transform .12s; }
 .primary { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); padding: 11px 17px; min-height: 44px; font-size: 14px !important; }
 .primary:hover:not(:disabled) { background: var(--primary-hover); border-color: var(--primary-hover); }
+.workspace .primary:disabled { background: var(--muted); border-color: var(--muted); color: var(--muted-foreground); opacity: 1; }
 .button { padding: 9px 12px; min-height: 36px; }
 .smallButton { padding: 7px 10px; min-height: 32px; font-size: 11px !important; }
 .iconButton { width: 33px; min-width: 33px; height: 33px; padding: 0; background: transparent; border-color: transparent; }
 .textButton { border: 0; background: transparent; padding: 6px 0; color: var(--muted-foreground); font-size: 11px !important; }
 .button:hover:not(:disabled), .smallButton:hover:not(:disabled), .iconButton:hover:not(:disabled) { background: var(--muted); border-color: var(--border); }
 .textButton:hover:not(:disabled) { color: var(--foreground); }
-.smallButton[aria-pressed="true"] { border-color: var(--video-orange); color: var(--video-orange); background: color-mix(in srgb, var(--video-orange) 7%, var(--card)); }
+.smallButton[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-foreground); background: var(--accent); }
 .primary:active:not(:disabled), .button:active:not(:disabled), .smallButton:active:not(:disabled) { transform: translateY(1px); }
 .dropOverlay { position: absolute; z-index: 10; inset: 7px; min-height: 270px; border-radius: 14px; border: 2px dashed var(--video-orange); background: color-mix(in srgb, var(--card) 95%, transparent); backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; pointer-events: none; color: var(--foreground); }
 .queueSection { margin-bottom: 22px; }
@@ -48,8 +49,8 @@
 .previewToolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 11px 12px; border-bottom: 1px solid var(--border); }
 .segment { display: flex; gap: 2px; padding: 3px; border-radius: 7px; background: var(--muted); min-width: 0; }
 .segment button { flex: 1; white-space: nowrap; border: 0; background: transparent; border-radius: 5px; padding: 6px 9px; color: var(--muted-foreground); font-size: 10px; font-weight: 550; }
-.segment button[aria-pressed="true"] { background: var(--card); color: var(--foreground); box-shadow: 0 1px 3px #00000013; }
-.previewBackdrop { background: #101012; min-height: 200px; display: flex; align-items: center; justify-content: center; padding: 15px; overflow: hidden; }
+.segment button[aria-pressed="true"] { background: var(--accent); color: var(--accent-foreground); }
+.previewBackdrop { background: #141312; min-height: 200px; display: flex; align-items: center; justify-content: center; padding: 15px; overflow: hidden; }
 .previewBackdrop:fullscreen { width: 100vw; height: 100vh; }
 .previewFrame { position: relative; background: #000; overflow: hidden; outline-offset: -3px !important; flex: 0 1 auto; }
 .previewFrame:fullscreen { width: 100vw !important; height: 100vh !important; max-height: none !important; background: #000; }
@@ -119,7 +120,7 @@
 .looks { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
 .looks button { border: 1px solid transparent; background: transparent; border-radius: 6px; padding: 3px; color: var(--muted-foreground); }
 .looks button[aria-pressed="true"] { border-color: var(--video-orange); color: var(--foreground); }
-.looks span { width: 100%; aspect-ratio: 1; display: block; border-radius: 4px; background: linear-gradient(145deg, #a9babe 0%, #768f84 46%, #565d50 47%, #cfc0a6 100%); }
+.looks span { width: 100%; aspect-ratio: 1; display: block; border-radius: 4px; background: linear-gradient(145deg, #ffb37a 0%, #e8885a 46%, #4a3f36 47%, #d9cbb8 100%); }
 .looks .warm { filter: sepia(.45) saturate(1.2); }
 .looks .cool { filter: hue-rotate(20deg) saturate(.8); }
 .looks .mono { filter: grayscale(1); }

@@ -136,7 +136,7 @@ export function TopBar() {
               if (!list.length) return null;
               return (
                 <div key={category.id} className="min-w-0">
-                  <Link href={category.href} onClick={() => closeMenu()} className="mb-2 flex items-center gap-2 rounded-md text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground">
+                  <Link href={category.href} onClick={() => closeMenu()} className="mb-2 flex items-center gap-2 rounded-md eyebrow hover:text-foreground">
                     <category.icon className="h-3.5 w-3.5" aria-hidden />
                     {category.label}
                   </Link>

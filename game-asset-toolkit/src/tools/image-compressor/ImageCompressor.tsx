@@ -135,10 +135,10 @@ export default function ImageCompressor() {
     {items.length > 0 && <section className="overflow-hidden rounded-2xl border border-border bg-card" aria-labelledby="compressor-queue">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-border px-5 py-4">
         <div className="min-w-0 flex-1">
-          <h2 id="compressor-queue" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{done.length ? `${done.length} of ${plural(items.length, "image")} done` : plural(items.length, "image")}</h2>
+          <h2 id="compressor-queue" className="eyebrow">{done.length ? `${done.length} of ${plural(items.length, "image")} done` : plural(items.length, "image")}</h2>
           {done.length ? <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-xl font-semibold tabular-nums tracking-tight">
             <span className="text-muted-foreground line-through decoration-1">{bytes(before)}</span><span aria-hidden>→</span><span className="sr-only">to</span><span>{bytes(after)}</span>
-            <span className={cn("text-base", percent >= 0.5 ? "text-[var(--success)]" : "text-[var(--warning)]")}>{percent >= 0 ? `${percent.toFixed(0)}% smaller` : `${Math.abs(percent).toFixed(0)}% larger`}</span>
+            <span className={cn("text-base", percent >= 0.5 ? "text-success" : "text-warning")}>{percent >= 0 ? `${percent.toFixed(0)}% smaller` : `${Math.abs(percent).toFixed(0)}% larger`}</span>
           </p> : <p className="mt-1 text-sm text-muted-foreground">{busy ? "Compressing on your device…" : "Ready to compress"}</p>}
           {busy && <p className="mt-1 text-[13px] text-muted-foreground" aria-live="polite">{plural(working.length, "image")} left…</p>}
         </div>
@@ -147,13 +147,13 @@ export default function ImageCompressor() {
       <ul className="max-h-[440px] divide-y divide-border overflow-auto">{items.map(item => {
         const stale = item.result && !sameSettings(item, settings);
         return <li key={item.id} className={cn("flex items-center gap-3 px-5 py-3", selectedItem?.id === item.id && done.length > 1 && "bg-hover")}>
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">{item.state === "working" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : item.state === "done" ? <Check className="h-4 w-4 text-[var(--success)]" aria-hidden /> : item.state === "error" ? <AlertCircle className="h-4 w-4 text-[var(--danger)]" aria-hidden /> : <FileImage className="h-4 w-4" aria-hidden />}</span>
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">{item.state === "working" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : item.state === "done" ? <Check className="h-4 w-4 text-success" aria-hidden /> : item.state === "error" ? <AlertCircle className="h-4 w-4 text-danger" aria-hidden /> : <FileImage className="h-4 w-4" aria-hidden />}</span>
           <div className="min-w-0 flex-1">
             <button type="button" className="block max-w-full truncate text-left text-sm font-medium enabled:hover:underline enabled:hover:underline-offset-4 disabled:cursor-default" disabled={!item.result} onClick={() => showPreview(item.id)} title={item.path}>{item.path}</button>
             <p className="mt-0.5 text-[13px] text-muted-foreground tabular-nums">{bytes(item.file.size)}{item.result ? <> → {bytes(item.result.blob.size)} · {outputFormat(item).toUpperCase()} · {item.result.width} × {item.result.height}{(item.result.inputWidth !== item.result.width || item.result.inputHeight !== item.result.height) && ` (from ${item.result.inputWidth} × ${item.result.inputHeight})`}</> : ` · ${item.phase || (item.state === "ready" ? "Ready" : item.state === "queued" ? "Waiting" : item.state === "cancelled" ? "Cancelled" : item.state === "error" ? "Needs attention" : "Working")}`}</p>
-            {item.error && <p className="mt-1 text-[13px] leading-relaxed text-[var(--danger)]" role="alert">{item.error}</p>}
+            {item.error && <p className="mt-1 text-[13px] leading-relaxed text-danger" role="alert">{item.error}</p>}
             {stale && <p className="mt-0.5 text-xs text-muted-foreground">Made with earlier settings. Compress again to apply the new ones.</p>}
-            {item.result && !item.result.targetMet && <p className="mt-0.5 text-xs text-[var(--warning)]">Target size not reached; kept the smallest result.</p>}
+            {item.result && !item.result.targetMet && <p className="mt-0.5 text-xs text-warning">Target size not reached; kept the smallest result.</p>}
           </div>
           <div className="flex items-center gap-1">
             {item.result && <button className={buttonClass("ghost", "sm", "hidden sm:inline-flex")} type="button" onClick={() => showPreview(item.id)}>Compare</button>}

@@ -27,7 +27,7 @@ export default function Home() {
         <ul className="mx-auto grid max-w-[1200px] gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-3">
           {trust.map((item) => (
             <li key={item.label} className="flex items-center gap-3.5 bg-card px-5 py-4">
-              <item.icon className="h-5 w-5 shrink-0 text-[var(--ring)]" aria-hidden />
+              <item.icon className="h-5 w-5 shrink-0 text-accent-text" aria-hidden />
               <span>
                 <span className="block text-sm font-medium">{item.label}</span>
                 <span className="block text-[13px] text-muted-foreground">{item.detail}</span>
