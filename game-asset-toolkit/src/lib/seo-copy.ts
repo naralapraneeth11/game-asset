@@ -57,6 +57,480 @@ export const homeSeo = {
 } as const;
 
 export const toolSeo = {
+  "wav-to-ogg": {
+    "title": "WAV to OGG Converter – Private Game Audio",
+    "description": "Convert WAV audio to OGG Vorbis in your browser. Adjust quality, trim, sample rate and channels, preview results and download a batch. Files never upload.",
+    "h1": "Convert WAV to OGG for game audio",
+    "intro": "Turn WAV masters into OGG Vorbis files for a compatible game pipeline. Choose quality and channel settings, then listen to the result before importing it.",
+    "steps": [
+      "Choose WAV files or other supported audio from your device.",
+      "Select quality and, if needed, adjust trim, sample rate, channels or loudness.",
+      "Press Convert to OGG and keep the page open while the batch processes.",
+      "Listen to the results and download individual files or a ZIP."
+    ],
+    "faq": [
+      {
+        "q": "What kind of OGG file does this make?",
+        "a": "It produces an Ogg container containing Vorbis audio. This is a real conversion, not a renamed WAV. Check your target engine and platform's import requirements before replacing production assets."
+      },
+      {
+        "q": "Is WAV to OGG lossless?",
+        "a": "No. Vorbis uses lossy compression to reduce size. Higher quality generally retains more audible detail and uses more space. Keep the original WAV as your editing master."
+      },
+      {
+        "q": "Will my sound loop without a gap?",
+        "a": "The converter does not create loop points or guarantee gapless playback. Start with matching loop boundaries and confirm the exported file in your game engine. Embedded loop metadata is not retained."
+      },
+      {
+        "q": "Do my audio files leave the device?",
+        "a": "No. The browser downloads codec software when needed, then processes your audio locally. Each source is limited to 256 MiB and each output to 128 MiB; smaller limits may be practical on low-memory devices."
+      }
+    ],
+    "searches": [
+      "wav to ogg",
+      "wav to vorbis",
+      "game audio converter",
+      "convert wav to ogg no upload",
+      "wav sound effects to ogg"
+    ]
+  },
+  "mp3-to-ogg": {
+    "title": "MP3 to OGG Converter – No Upload",
+    "description": "Convert MP3 files to OGG Vorbis locally. Set quality, trim audio, choose channels and sample rate, then preview and download the batch. Nothing is uploaded.",
+    "h1": "Convert MP3 files to OGG Vorbis",
+    "intro": "Make OGG versions of MP3 music and audio for workflows that require Vorbis. Set the output options and listen before you download, with no audio uploads.",
+    "steps": [
+      "Drop MP3 files into the converter.",
+      "Choose a quality preset and adjust audio options when needed.",
+      "Convert the queued files to OGG Vorbis on this device.",
+      "Preview the converted audio and download the files separately or as a ZIP."
+    ],
+    "faq": [
+      {
+        "q": "Will converting MP3 to OGG improve quality?",
+        "a": "No. MP3 has already lost some audio information, and encoding it again as Vorbis can introduce further loss. Use a WAV or FLAC master instead when one is available."
+      },
+      {
+        "q": "Is the output Opus or Vorbis?",
+        "a": "This converter exports Vorbis audio inside Ogg files. Ogg can contain several codecs, so a filename ending in .ogg does not identify the codec by itself."
+      },
+      {
+        "q": "Can I trim several songs with the same settings?",
+        "a": "Yes. The chosen start time, end time and audio options apply to every queued source. An end time of zero means each file's natural end. An invalid range produces a clear error for that file."
+      },
+      {
+        "q": "Why can I download a result but not play its preview?",
+        "a": "Browser audio playback support varies. A browser without Ogg Vorbis playback can still run the local encoder. Download the result and listen in a compatible player or your target game engine."
+      }
+    ],
+    "searches": [
+      "mp3 to ogg",
+      "mp3 to vorbis",
+      "convert mp3 to ogg no upload",
+      "game music ogg converter"
+    ]
+  },
+  "pixel-art-scaler": {
+    "title": "Pixel Art Scaler – Resize Without Blur",
+    "description": "Scale pixel art by whole-number factors with nearest-neighbor resizing. Keep transparent edges, preview enlarged pixels and download PNGs locally. No upload.",
+    "h1": "Scale pixel art without blur",
+    "intro": "Enlarge sprites and pixel artwork into clear, even blocks. Choose a whole-number scale, inspect the pixels and export transparent PNGs without smoothing.",
+    "steps": [
+      "Choose static PNG, JPEG or WebP artwork.",
+      "Pick a whole-number scale from 1× to 16× within the output limits.",
+      "Scale the files and inspect the original and result at a larger preview zoom.",
+      "Download the PNG outputs individually or as a ZIP with a size manifest."
+    ],
+    "faq": [
+      {
+        "q": "Why does nearest-neighbor scaling keep pixels sharp?",
+        "a": "It repeats each source pixel into a uniform block instead of blending neighboring colors. A 4× enlargement makes each source pixel four pixels wide and four pixels tall."
+      },
+      {
+        "q": "Does this invent new detail or use AI?",
+        "a": "No. It preserves the existing pixel pattern at a larger size. It cannot recover detail that was blurred or compressed before the image reached the tool."
+      },
+      {
+        "q": "Can I keep a transparent background?",
+        "a": "Yes. Output is PNG and retains the image's alpha channel. An opaque source remains opaque; scaling does not remove backgrounds or recreate transparency that was lost earlier."
+      },
+      {
+        "q": "Are animation and very large enlargements supported?",
+        "a": "This tool handles still PNG, JPEG and WebP images, not animated GIF, APNG or animated WebP. Source and output pixel limits are shown in the tool, and a factor that would exceed them is rejected."
+      }
+    ],
+    "searches": [
+      "pixel art scaler",
+      "scale pixel art without blur",
+      "pixel art upscaler",
+      "nearest neighbor image resize",
+      "resize sprites"
+    ]
+  },
+  "gif-to-sprite-sheet": {
+    "title": "GIF to Sprite Sheet – PNG Atlas & JSON",
+    "description": "Turn GIF animation into a PNG sprite sheet with frame timing JSON. Choose frames, columns and padding, then download locally. No upload or added watermark.",
+    "h1": "Convert a GIF to a sprite sheet",
+    "intro": "Bring a GIF into your game pipeline as fully composed PNG frames. Export a sheet with frame rectangles and durations, plus individual frames when you need them.",
+    "steps": [
+      "Choose a GIF and review its dimensions, frame count and duration.",
+      "Select a frame range, sampling interval, columns, scale and padding.",
+      "Choose whether to include individual PNG frames, then build the sheet.",
+      "Download the PNG atlas and JSON together, or save the available files separately."
+    ],
+    "faq": [
+      {
+        "q": "Are GIF frames copied directly or reconstructed?",
+        "a": "They are reconstructed on the GIF canvas using frame offsets and disposal instructions. This matters because many GIFs store only the changed area of a frame, not a complete standalone picture."
+      },
+      {
+        "q": "Does the export preserve frame timing?",
+        "a": "JSON records the encoded frame durations in milliseconds. Missing or zero delays use a documented 100 ms fallback. If you sample every second or third frame, each exported frame holds for the combined duration it represents."
+      },
+      {
+        "q": "What files will I download?",
+        "a": "A PNG sprite sheet and JSON containing frame rectangles, source information and timing. You can also include individual PNG frames. Your game engine may need a small importer to apply the timing information."
+      },
+      {
+        "q": "Can I export any size GIF?",
+        "a": "GIF input is limited to 32 MiB, and a sheet can contain up to 512 exported frames within the displayed canvas and pixel limits. Choose a shorter range or smaller scale when an animation exceeds those limits."
+      }
+    ],
+    "searches": [
+      "gif to sprite sheet",
+      "gif to sprites",
+      "extract gif frames png",
+      "gif texture atlas",
+      "sprite sheet frame timing"
+    ]
+  },
+  "sprite-sheet-splitter": {
+    "title": "Sprite Sheet Splitter – Export PNG Frames",
+    "description": "Split a regular sprite sheet into PNG frames locally. Set rows, columns or cell size, margins and gutters, then download sprites with a manifest. No upload.",
+    "h1": "Split a sprite sheet into PNG frames",
+    "intro": "Turn a regular grid of sprites into separate images without moving pixels by hand. Set the grid, account for margins and gutters, then export just the cells you need.",
+    "steps": [
+      "Choose a static sprite sheet image.",
+      "Set rows and columns or cell dimensions, then adjust margins, offsets and gutters.",
+      "Choose the frame range, reading order and whether to skip fully transparent cells.",
+      "Split the sheet and download the PNG frames with their JSON manifest."
+    ],
+    "faq": [
+      {
+        "q": "Can this unpack an irregular texture atlas?",
+        "a": "This tool slices equal-size cells in a regular grid. A tightly packed atlas with differently sized or rotated sprites needs its matching atlas metadata and a separate unpacking workflow."
+      },
+      {
+        "q": "What are margins, gutters and offsets?",
+        "a": "Margins describe empty space at the sheet edges, gutters separate adjacent cells, and offsets move the grid origin. Use them to align the grid with the artwork instead of cropping by eye."
+      },
+      {
+        "q": "Will transparent cells disappear automatically?",
+        "a": "Only when Skip transparent cells is enabled. Fully transparent cells can then be omitted while their original cell numbers remain traceable in filenames and the manifest. Partially transparent sprites are retained."
+      },
+      {
+        "q": "What does the manifest include?",
+        "a": "It records source dimensions, grid settings, reading order and each exported sprite's source rectangle and output size. This lets you trace an individual PNG back to its original sheet cell."
+      }
+    ],
+    "searches": [
+      "sprite sheet splitter",
+      "split sprite sheet into frames",
+      "sprite sheet slicer",
+      "tileset to individual png",
+      "extract sprites from sheet"
+    ]
+  },
+  "png-to-webp": {
+    "title": "PNG to WebP Converter – No Upload",
+    "description": "Convert PNG images to WebP in your browser, keeping transparent backgrounds. Adjust quality, compare results and download a batch as ZIP. Nothing uploads.",
+    "h1": "Convert PNG to WebP without uploading",
+    "intro": "Create WebP versions of your PNG artwork for places that support it. WebP is selected when you arrive, and you can compare the result before saving.",
+    "steps": [
+      "Drop PNG files or choose them from your device.",
+      "Keep WebP output and choose a quality preset.",
+      "Open a finished result to compare it with the source.",
+      "Download a WebP image or the whole batch as a ZIP."
+    ],
+    "faq": [
+      {
+        "q": "Will my transparent background be kept?",
+        "a": "Yes. WebP supports transparency, so transparent areas do not need a white background. Inspect delicate edges in the comparison preview before using the result."
+      },
+      {
+        "q": "Is PNG to WebP conversion lossless?",
+        "a": "The WebP quality presets use lossy color compression. Keep the source PNG for pixel-critical sprites, masks and normal maps, or when your pipeline requires exact source pixels."
+      },
+      {
+        "q": "Will the WebP always be smaller?",
+        "a": "No. The result depends on the artwork and chosen quality. Small or already optimized PNGs may not shrink, and the result list shows the actual size instead of promising a reduction."
+      },
+      {
+        "q": "Can I convert animated PNGs?",
+        "a": "This page is for still images. It does not convert an animation into an animated WebP. Export still frames or use a tool designed for animation when timing and multiple frames need to be preserved."
+      }
+    ],
+    "searches": [
+      "png to webp",
+      "convert png to webp",
+      "png to webp transparent",
+      "batch png to webp"
+    ]
+  },
+  "jpg-to-png": {
+    "title": "JPG to PNG Converter – Private & Free",
+    "description": "Convert JPG and JPEG images to PNG locally in your browser. Keep original dimensions, compare each result and download single images or a ZIP. No upload.",
+    "h1": "Convert JPG images to PNG",
+    "intro": "Make PNG copies for editors, asset pipelines and importers that need them. Conversion runs locally, with PNG output already selected for you.",
+    "steps": [
+      "Choose your JPG or JPEG images.",
+      "Keep PNG selected and leave resizing off to retain the original dimensions.",
+      "Review the completed images and their output sizes.",
+      "Download one PNG or every result in a ZIP."
+    ],
+    "faq": [
+      {
+        "q": "Does converting to PNG improve JPEG quality?",
+        "a": "No. PNG preserves the decoded image without another lossy encoding step, but it cannot restore detail already removed by JPEG compression."
+      },
+      {
+        "q": "Will the image background become transparent?",
+        "a": "No. JPEG has no alpha channel, and converting the format does not remove backgrounds. The original opaque pixels remain in the PNG."
+      },
+      {
+        "q": "Why is the PNG larger than my JPG?",
+        "a": "PNG uses lossless compression, which is often less compact for photographs than JPEG. Use PNG when the receiving workflow needs it, rather than expecting this conversion to reduce file size."
+      },
+      {
+        "q": "Are the images uploaded to make the conversion?",
+        "a": "No. Your browser reads the files and creates the PNG outputs locally. Codec code may download on first use, but your images are not sent to the server."
+      }
+    ],
+    "searches": [
+      "jpg to png",
+      "jpeg to png",
+      "convert jpg to png",
+      "batch jpeg to png no upload"
+    ]
+  },
+  "webp-to-png": {
+    "title": "WebP to PNG Converter – No Upload",
+    "description": "Convert still WebP images to PNG in your browser while keeping transparency. Preserve dimensions, compare the result and download a batch. Nothing uploads.",
+    "h1": "Convert WebP images to PNG",
+    "intro": "Open downloaded WebP artwork in workflows that expect PNG. Transparent areas remain transparent, and your files stay on this device throughout conversion.",
+    "steps": [
+      "Drop still WebP images into the page.",
+      "Keep PNG output and check that resizing is off if original dimensions matter.",
+      "Inspect a completed PNG in the comparison view.",
+      "Download the PNG files individually or in a ZIP."
+    ],
+    "faq": [
+      {
+        "q": "Does WebP to PNG keep transparency?",
+        "a": "Yes. PNG can store the source alpha channel, so transparent regions remain transparent. No background color is added unless you choose a format or setting that requires one."
+      },
+      {
+        "q": "Does PNG recover detail missing from WebP?",
+        "a": "No. If the WebP was encoded with lossy compression, those losses are already part of the decoded image. PNG avoids adding another lossy encode but cannot reconstruct missing detail."
+      },
+      {
+        "q": "Can I convert an animated WebP?",
+        "a": "This image converter handles still images, not animation sequences. An animated WebP needs a dedicated frame or animation workflow if you want to retain every frame and its timing."
+      },
+      {
+        "q": "Why does my PNG download use more space?",
+        "a": "WebP often compresses photographs and web artwork more efficiently. PNG is useful for compatibility and lossless editing, but it is not guaranteed to make a smaller file."
+      }
+    ],
+    "searches": [
+      "webp to png",
+      "convert webp to png",
+      "webp to png transparent",
+      "webp converter no upload"
+    ]
+  },
+  "compress-png": {
+    "title": "Compress PNG – Lossless & No Upload",
+    "description": "Compress PNG files locally with lossless optimization. Keep original size and transparency, compare file sizes and download a batch as ZIP. Nothing uploads.",
+    "h1": "Compress PNG files without losing pixels",
+    "intro": "Optimize still PNGs without a lossy quality slider. This page starts with PNG output and no automatic resizing, so original-size artwork keeps its pixels.",
+    "steps": [
+      "Drop the PNG files you want to optimize.",
+      "Keep PNG output and original dimensions for lossless optimization.",
+      "Compare original and optimized file sizes when processing finishes.",
+      "Download the optimized files or the full batch as a ZIP."
+    ],
+    "faq": [
+      {
+        "q": "Is PNG compression truly lossless here?",
+        "a": "Original-size PNG optimization preserves image pixels while changing how they are compressed. Resizing is a separate operation that changes the pixels, so leave resizing off for exact-size assets."
+      },
+      {
+        "q": "Why did some PNGs barely shrink?",
+        "a": "They may already have efficient compression. Different PNGs contain different amounts of redundancy, so a lossless optimizer cannot promise a fixed percentage reduction."
+      },
+      {
+        "q": "Can I force a PNG under a specific size?",
+        "a": "Not with lossless optimization alone. If the optimized file is still too large, reducing dimensions or switching to a lossy format can help, but either choice changes what you are preserving."
+      },
+      {
+        "q": "Are transparency and metadata kept?",
+        "a": "Transparency is retained. Metadata is a separate option and can contain private information; keep original-size output and enable metadata preservation only when your workflow needs it."
+      }
+    ],
+    "searches": [
+      "compress png",
+      "png compressor",
+      "lossless png optimizer",
+      "reduce png size",
+      "compress png no upload"
+    ]
+  },
+  "mp4-to-mp3": {
+    "title": "MP4 to MP3 – Extract Audio Privately",
+    "description": "Extract audio from MP4 videos as MP3, WAV or AAC in your browser. Convert a batch, then download your soundtracks. No upload, no account and no watermark.",
+    "h1": "Extract MP3 audio from MP4 video",
+    "intro": "Keep the soundtrack and leave the video behind. MP3 is selected for you, and the original video stays untouched on your device.",
+    "steps": [
+      "Choose an MP4 or another supported video file from your device.",
+      "Keep MP3 output, or choose WAV or AAC with the audio format buttons.",
+      "Press Extract MP3 and keep the page open while the soundtrack is extracted.",
+      "Download each audio file or save the completed batch as a ZIP."
+    ],
+    "faq": [
+      {
+        "q": "Can I extract audio without uploading the video?",
+        "a": "Yes. The browser reads the video and encodes the soundtrack on your device. The first use may download the site's codec software, but your video is not sent with that download."
+      },
+      {
+        "q": "What happens if my video has no sound?",
+        "a": "The tool checks for an audio track and explains when one is missing. It cannot recover sound from a silent source or create a soundtrack that was never recorded."
+      },
+      {
+        "q": "Does MP3 preserve the original audio exactly?",
+        "a": "No. MP3 export re-encodes the soundtrack using lossy compression. WAV avoids another lossy encode, although it cannot restore detail already missing from the source."
+      },
+      {
+        "q": "Can I process a large video or several files?",
+        "a": "You can queue up to 20 files. Audio extraction uses the local compatibility engine, with a 256 MiB source limit and a 128 MiB output limit per file. Your device may impose lower practical limits."
+      }
+    ],
+    "searches": [
+      "mp4 to mp3",
+      "extract audio from video",
+      "video to mp3 without uploading",
+      "mp4 to wav",
+      "private audio extractor"
+    ]
+  },
+  "mov-to-mp4": {
+    "title": "MOV to MP4 Converter – No Upload",
+    "description": "Convert MOV videos to H.264 MP4 in your browser. Adjust resolution and quality, process a batch and download locally. No upload, account or added watermark.",
+    "h1": "Convert MOV to MP4 without uploading",
+    "intro": "Make MOV footage easier to share and import by exporting an H.264 MP4. Choose a quality and size that suit your destination, with all processing on this device.",
+    "steps": [
+      "Drop your MOV files into the converter.",
+      "Keep MP4 selected and adjust quality or resolution if needed.",
+      "Press Convert and keep the tab open until encoding finishes.",
+      "Download an MP4 or save all completed files in a ZIP."
+    ],
+    "faq": [
+      {
+        "q": "Does this convert MOV files from an iPhone?",
+        "a": "It can convert supported, unencrypted MOV recordings, including many H.264 and HEVC sources. Codec support depends on the browser and bundled conversion engine. HDR footage may need an SDR export first."
+      },
+      {
+        "q": "Is changing .mov to .mp4 enough?",
+        "a": "No. Renaming a file does not change its container or codecs. This tool decodes supported media and exports a real MP4 with the selected encoding settings."
+      },
+      {
+        "q": "Will the result look identical?",
+        "a": "Video export re-encodes the frames, so some detail can change. A higher quality setting generally preserves more detail while increasing size. Check the downloaded result before replacing your original."
+      },
+      {
+        "q": "Why does the first conversion download something?",
+        "a": "The page may need its local codec software before it can process your MOV. Only application code is downloaded. Your video stays on your device, and conversion speed depends on its available encoders and memory."
+      }
+    ],
+    "searches": [
+      "mov to mp4",
+      "convert iphone mov to mp4",
+      "quicktime to mp4",
+      "mov to mp4 no upload"
+    ]
+  },
+  "mp4-to-gif": {
+    "title": "MP4 to GIF Converter – Private & Free",
+    "description": "Turn an MP4 clip into a looping GIF locally. Choose a segment up to 30 seconds, set its width and frame rate, then download. No upload or added watermark.",
+    "h1": "Turn MP4 video into a looping GIF",
+    "intro": "Choose a short moment, set the output width and make a GIF for a message, devlog or project page. Your source video stays on this device.",
+    "steps": [
+      "Choose the MP4 you want to turn into an animation.",
+      "Set the start and end of a clip lasting up to 30 seconds.",
+      "Choose a GIF width and, if needed, adjust the frame rate.",
+      "Press Make GIF and download the completed loop."
+    ],
+    "faq": [
+      {
+        "q": "How much of the video can become a GIF?",
+        "a": "Export a selected segment up to 30 seconds long. Shorter loops usually work better for sharing because GIF files grow quickly as you add frames."
+      },
+      {
+        "q": "Will the GIF include the video's sound?",
+        "a": "No. GIF cannot carry an audio track. Use MP4 or WebM if the sound is part of the clip, or extract the soundtrack separately with MP4 to MP3."
+      },
+      {
+        "q": "How do I reduce the GIF file size?",
+        "a": "Choose a shorter segment, a narrower width or a lower frame rate. The maximum width is 640 pixels and the maximum frame rate is 15 fps. Small changes can make a substantial difference."
+      },
+      {
+        "q": "Why are some GIF colors different?",
+        "a": "GIF uses a limited palette. The converter builds a palette from the clip and applies dithering, but smooth gradients and complex colors can still change. Keep a video format when precise color matters."
+      }
+    ],
+    "searches": [
+      "mp4 to gif",
+      "make gif from mp4",
+      "video clip to gif",
+      "mp4 to gif without watermark"
+    ]
+  },
+  "webm-to-mp4": {
+    "title": "WebM to MP4 Converter – No Upload",
+    "description": "Convert WebM recordings to H.264 MP4 on your device. Choose resolution and quality, convert multiple files and download a ZIP. No upload or added watermark.",
+    "h1": "Convert WebM to MP4 on your device",
+    "intro": "Turn supported WebM recordings into MP4 files for editors, players and sharing workflows that prefer H.264. Your recordings never need to leave the browser.",
+    "steps": [
+      "Choose one or more WebM recordings.",
+      "Keep MP4 output and select the resolution and quality you need.",
+      "Press Convert while leaving the page open.",
+      "Download the finished MP4 files individually or as a ZIP."
+    ],
+    "faq": [
+      {
+        "q": "Why convert a WebM recording to MP4?",
+        "a": "Some editing, messaging and import workflows expect an MP4 container with H.264 video. Conversion produces that combination instead of only changing the file's name."
+      },
+      {
+        "q": "Will transparency survive the conversion?",
+        "a": "No. The H.264 MP4 output used here does not retain an alpha channel. Keep the original WebM when transparent video is part of your workflow."
+      },
+      {
+        "q": "Does the converter keep the audio?",
+        "a": "Supported audio tracks are included unless you choose settings that remove sound. If the source codec cannot be decoded, the converter reports the problem instead of inventing a replacement track."
+      },
+      {
+        "q": "Can every WebM file be converted?",
+        "a": "No codec is guaranteed on every device. Support depends on the source's video and audio codecs, browser capabilities and local fallback engine. Damaged or encrypted recordings are not supported."
+      }
+    ],
+    "searches": [
+      "webm to mp4",
+      "convert webm screen recording",
+      "vp9 to h264",
+      "webm to mp4 no upload"
+    ]
+  },
   "image-compressor": {
     title: "Image Compressor: Compress JPG, PNG, WebP",
     description:
@@ -400,37 +874,40 @@ export const toolSeo = {
   },
 
   "1x-2x-3x-image-generator": {
-    title: "1x 2x 3x Image Generator for iOS & Android",
-    description:
-      "Export @1x, @2x and @3x images from your largest asset, with iOS and Android naming, pixel-art scaling and a ZIP download. Runs in your browser, no upload.",
-    h1: "Generate 1x, 2x and 3x images",
-    intro:
-      "Drop your largest artwork and get every retina size with the right names. Pixel art scales with nearest neighbor so edges stay sharp.",
-    steps: [
-      "Drop your images at their largest (@3x) size.",
-      "Choose iOS or Android naming.",
-      "Pick smooth or pixel-art scaling.",
-      "Download every size as a ZIP.",
+    "title": "1x 2x 3x Image Generator – PNG Sets",
+    "description": "Generate 1x, 2x and 3x PNG assets from a declared source density. Choose crisp or smooth resizing, check dimensions and download sets locally. Nothing uploads.",
+    "h1": "Generate 1×, 2× and 3× image assets",
+    "intro": "Tell the generator which density your source already represents, and export a correctly sized PNG set. Clear dimensions and filenames keep the set easy to import.",
+    "steps": [
+      "Choose one or more static images and declare their source density: 1×, 2× or 3×.",
+      "Choose nearest-neighbor for pixel art or smoothing for other artwork.",
+      "Generate the set and check the actual output dimensions.",
+      "Download the PNGs and manifest as a ZIP, or save individual outputs."
     ],
-    faq: [
+    "faq": [
       {
-        q: "Why start from the largest image?",
-        a: "Scaling down keeps detail; scaling up invents pixels and blurs art. Export at @3x and let the tool derive @2x and @1x.",
+        "q": "How are the three output sizes calculated?",
+        "a": "The source width and height are divided by the declared source density to find the 1× size. That size is multiplied by two and three. A 96 × 96 source at 3× produces 32 × 32, 64 × 64 and 96 × 96 outputs."
       },
       {
-        q: "Which names does it use?",
-        a: "iOS uses @2x and @3x suffixes. Android uses density folders from mdpi to xxxhdpi. You can also set a custom suffix.",
+        "q": "Why must the source dimensions divide evenly?",
+        "a": "Each density needs whole pixel dimensions. If a declared 3× source cannot divide evenly by three, the tool asks you to correct its dimensions or density instead of rounding and creating an inconsistent set."
       },
       {
-        q: "Does pixel art stay sharp?",
-        a: "Yes. Pixel-art mode uses nearest-neighbor scaling so every pixel stays a crisp square.",
+        "q": "Should I start with the largest available artwork?",
+        "a": "Usually. A true 3× source can provide all three sizes without inventing extra detail. Starting from a 1× image and enlarging it creates larger pixels, not additional source detail."
       },
       {
-        q: "Is anything uploaded?",
-        a: "No. Resizing happens in a background worker in your browser.",
-      },
+        "q": "Does 2× mean changing DPI metadata?",
+        "a": "No. These outputs have different actual pixel dimensions. The density labels and manifest describe those dimensions; changing a print-resolution tag alone would not create the required assets."
+      }
     ],
-    searches: ["1x 2x 3x image generator", "@2x @3x generator", "retina image generator", "android drawable generator"],
+    "searches": [
+      "1x 2x 3x image generator",
+      "retina image generator",
+      "generate image density assets",
+      "2x 3x png export"
+    ]
   },
 
   "3d-model-converter": {
@@ -976,3 +1453,4 @@ export const hubSeo = {
     searches: ["developer tools online", "online dev tools", "json jwt base64 tools", "web developer utilities"],
   },
 } as const satisfies Record<ToolCategory, HubSeo>;
+

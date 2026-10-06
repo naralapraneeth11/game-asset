@@ -21,11 +21,11 @@ async function startupFailure(signal: AbortSignal, detail: string) {
   }
   return `The worker files are available, but this browser could not start them. Check the site's worker security policy and use a current browser. ${detail}`;
 }
-export function useCompressor() {
-  const [items, setItems] = useState<Item[]>([]), [settings, setSettings] = useState<Settings>({ ...DEFAULTS });
+export function useCompressor(initialSettings: Partial<Settings> = {}) {
+  const [items, setItems] = useState<Item[]>([]), [settings, setSettings] = useState<Settings>(() => ({ ...DEFAULTS, ...initialSettings }));
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
   const [notice, setNotice] = useState(""), [maxPixels, setMaxPixels] = useState(LIMITS.pixels);
-  const itemsRef = useRef(items), active = useRef(new Map<string, Active>()), pending = useRef<string[]>([]), mounted = useRef(true), runSettings = useRef({ ...DEFAULTS });
+  const itemsRef = useRef(items), active = useRef(new Map<string, Active>()), pending = useRef<string[]>([]), mounted = useRef(true), runSettings = useRef({ ...DEFAULTS, ...initialSettings });
   const cap = useRef(LIMITS.pixels), pumpRef = useRef<() => void>(() => {});
   const update = useCallback((fn: (items: Item[]) => Item[]) => { if (!mounted.current) return; itemsRef.current = fn(itemsRef.current); setItems(itemsRef.current); }, []);
   const stopOne = useCallback((id: string) => { const job = active.current.get(id); if (job) { clearTimeout(job.timer); job.abort.abort(); job.worker.terminate(); active.current.delete(id); } pending.current = pending.current.filter(x => x !== id); }, []);

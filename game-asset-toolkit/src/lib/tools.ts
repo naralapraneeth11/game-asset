@@ -190,7 +190,6 @@ const definitions = [
     status: "live",
   },
   {
-    // Hidden: UI mockup. Needs the resize engine (OffscreenCanvas worker + fflate ZIP) before launch.
     id: "1x-2x-3x-image-generator",
     name: "1x 2x 3x Image Generator",
     shortName: "1x 2x 3x Generator",
@@ -198,7 +197,7 @@ const definitions = [
     icon: Scaling,
     category: "game-dev",
     keywords: ["1x", "2x", "3x", "retina", "@2x", "@3x", "mdpi", "xxhdpi", "pixel art", "resize"],
-    status: "hidden",
+    status: "live",
   },
   {
     // Hidden: UI mockup with hard-coded stats. Needs three.js loaders/exporters before launch.
@@ -334,6 +333,232 @@ const definitions = [
     keywords: ["color", "colour", "hex", "rgb", "hsl", "oklch", "convert", "picker"],
     status: "live",
   },
+  {
+    "id": "mp4-to-mp3",
+    "name": "MP4 to MP3 Converter",
+    "shortName": "MP4 to MP3",
+    "tagline": "Extract a video's soundtrack without uploading it",
+    "icon": Film,
+    "category": "video",
+    "keywords": [
+      "mp4",
+      "mp3",
+      "extract audio",
+      "soundtrack",
+      "video to audio",
+      "wav",
+      "aac"
+    ],
+    "isolated": true,
+    "status": "live"
+  },
+  {
+    "id": "mov-to-mp4",
+    "name": "MOV to MP4 Converter",
+    "shortName": "MOV to MP4",
+    "tagline": "Convert MOV footage to a shareable H.264 MP4",
+    "icon": Repeat,
+    "category": "video",
+    "keywords": [
+      "mov",
+      "mp4",
+      "quicktime",
+      "iphone video",
+      "h264",
+      "convert"
+    ],
+    "isolated": true,
+    "status": "live"
+  },
+  {
+    "id": "mp4-to-gif",
+    "name": "MP4 to GIF Converter",
+    "shortName": "MP4 to GIF",
+    "tagline": "Turn a short MP4 clip into a silent looping GIF",
+    "icon": ImagePlay,
+    "category": "video",
+    "keywords": [
+      "mp4",
+      "gif",
+      "animation",
+      "loop",
+      "clip",
+      "video to gif"
+    ],
+    "isolated": true,
+    "status": "live"
+  },
+  {
+    "id": "webm-to-mp4",
+    "name": "WebM to MP4 Converter",
+    "shortName": "WebM to MP4",
+    "tagline": "Make WebM recordings easier to share as MP4",
+    "icon": Repeat,
+    "category": "video",
+    "keywords": [
+      "webm",
+      "mp4",
+      "vp9",
+      "screen recording",
+      "h264",
+      "convert"
+    ],
+    "isolated": true,
+    "status": "live"
+  },
+  {
+    "id": "png-to-webp",
+    "name": "PNG to WebP Converter",
+    "shortName": "PNG to WebP",
+    "tagline": "Convert PNG images to WebP with transparency",
+    "icon": ImageDown,
+    "category": "image",
+    "keywords": [
+      "png",
+      "webp",
+      "convert",
+      "transparent",
+      "smaller images"
+    ],
+    "status": "live"
+  },
+  {
+    "id": "jpg-to-png",
+    "name": "JPG to PNG Converter",
+    "shortName": "JPG to PNG",
+    "tagline": "Make PNG copies of JPG images on your device",
+    "icon": ImageDown,
+    "category": "image",
+    "keywords": [
+      "jpg",
+      "jpeg",
+      "png",
+      "convert",
+      "image format"
+    ],
+    "status": "live"
+  },
+  {
+    "id": "webp-to-png",
+    "name": "WebP to PNG Converter",
+    "shortName": "WebP to PNG",
+    "tagline": "Turn still WebP images into transparent PNGs",
+    "icon": ImageDown,
+    "category": "image",
+    "keywords": [
+      "webp",
+      "png",
+      "convert",
+      "transparent",
+      "image compatibility"
+    ],
+    "status": "live"
+  },
+  {
+    "id": "compress-png",
+    "name": "PNG Compressor",
+    "shortName": "Compress PNG",
+    "tagline": "Optimize PNG files while keeping their pixels",
+    "icon": ImageDown,
+    "category": "image",
+    "keywords": [
+      "png",
+      "compress",
+      "lossless",
+      "optimize",
+      "transparency",
+      "reduce size"
+    ],
+    "status": "live"
+  },
+  {
+    "id": "gif-to-sprite-sheet",
+    "name": "GIF to Sprite Sheet",
+    "shortName": "GIF to Sprites",
+    "tagline": "Export composed GIF frames as a PNG atlas and JSON",
+    "icon": ImagePlay,
+    "category": "game-dev",
+    "keywords": [
+      "gif",
+      "sprite sheet",
+      "frames",
+      "animation",
+      "texture atlas",
+      "duration"
+    ],
+    "status": "live"
+  },
+  {
+    "id": "sprite-sheet-splitter",
+    "name": "Sprite Sheet Splitter",
+    "shortName": "Split Sprite Sheet",
+    "tagline": "Slice a regular sprite grid into individual PNGs",
+    "icon": Grid3X3,
+    "category": "game-dev",
+    "keywords": [
+      "sprite sheet",
+      "split",
+      "slice",
+      "grid",
+      "sprites",
+      "tileset",
+      "png frames"
+    ],
+    "status": "live"
+  },
+  {
+    "id": "pixel-art-scaler",
+    "name": "Pixel Art Scaler",
+    "shortName": "Pixel Art Scaler",
+    "tagline": "Enlarge pixel art with crisp nearest-neighbor edges",
+    "icon": Scaling,
+    "category": "game-dev",
+    "keywords": [
+      "pixel art",
+      "scale",
+      "upscale",
+      "nearest neighbor",
+      "no blur",
+      "resize sprites"
+    ],
+    "status": "live"
+  },
+  {
+    "id": "wav-to-ogg",
+    "name": "WAV to OGG Converter",
+    "shortName": "WAV to OGG",
+    "tagline": "Convert WAV masters into adjustable OGG game audio",
+    "icon": Repeat,
+    "category": "game-dev",
+    "keywords": [
+      "wav",
+      "ogg",
+      "vorbis",
+      "game audio",
+      "sound effects",
+      "audio converter"
+    ],
+    "isolated": true,
+    "status": "live"
+  },
+  {
+    "id": "mp3-to-ogg",
+    "name": "MP3 to OGG Converter",
+    "shortName": "MP3 to OGG",
+    "tagline": "Convert MP3 audio to OGG Vorbis on your device",
+    "icon": Repeat,
+    "category": "game-dev",
+    "keywords": [
+      "mp3",
+      "ogg",
+      "vorbis",
+      "game music",
+      "audio converter",
+      "soundtrack"
+    ],
+    "isolated": true,
+    "status": "live"
+  },
 ] as const satisfies readonly ToolDefinition[];
 
 export type ToolId = (typeof definitions)[number]["id"];
@@ -406,3 +631,4 @@ export function searchTools(query: string): readonly Tool[] {
   });
   return scored.sort((a, b) => b.score - a.score || a.index - b.index).map(({ tool }) => tool);
 }
+

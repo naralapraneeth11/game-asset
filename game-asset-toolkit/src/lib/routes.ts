@@ -8,7 +8,7 @@
  * drops to single-thread mode. Must match the tools marked `isolated` in
  * src/lib/tools.ts.
  */
-export const VIDEO_ROUTES = ["/video-compressor", "/video-converter", "/video-to-gif", "/video-editor"] as const;
+export const VIDEO_ROUTES = ["/video-compressor", "/video-converter", "/video-to-gif", "/video-editor", "/mp4-to-mp3", "/mov-to-mp4", "/mp4-to-gif", "/webm-to-mp4", "/wav-to-ogg", "/mp3-to-ogg"] as const;
 
 /**
  * Permanent redirects from pre-launch URLs, in case a preview link was shared.
@@ -23,7 +23,7 @@ export const LEGACY_REDIRECTS: readonly { source: string; destination: string }[
   { source: "/tools/sprite-packer", destination: "/sprite-sheet-packer" },
   { source: "/tools/video-editor", destination: "/video-editor" },
   // Mockups that are hidden until their engines ship: send visitors to the hub.
-  { source: "/tools/1x-2x-3x-converter", destination: "/game-dev-tools" },
+  { source: "/tools/1x-2x-3x-converter", destination: "/1x-2x-3x-image-generator" },
   { source: "/tools/3d-converter", destination: "/game-dev-tools" },
   { source: "/tools/batch-export", destination: "/game-dev-tools" },
   { source: "/tools/dev", destination: "/developer-tools" },
@@ -40,3 +40,4 @@ export const LEGACY_REDIRECTS: readonly { source: string; destination: string }[
   { source: "/tools/dev/color-converter", destination: "/color-converter" },
   { source: "/tools", destination: "/" },
 ];
+
