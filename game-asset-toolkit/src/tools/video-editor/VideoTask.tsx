@@ -17,12 +17,13 @@ import { Field, NumberField, Slider, Switch, bytes, time } from "./components/Co
 import { LIMITS, type Container, type QueueItem, type VideoCodec, type VideoSettings } from "./types";
 import s from "./VideoEditor.module.css";
 
-export type VideoTaskMode = "compress" | "convert" | "gif";
+export type VideoTaskMode = "compress" | "convert" | "gif" | "audio";
 
 const modes = {
   compress: { verb: "Compress", doing: "Compressing", suffix: "compressed", initial: { format: "mp4", codec: "h264", resolution: 1080, quality: 0.72 } },
   convert: { verb: "Convert", doing: "Converting", suffix: "converted", initial: { format: "mp4", codec: "h264", resolution: 0, quality: 0.8 } },
   gif: { verb: "Make GIF", doing: "Making GIF", suffix: "", initial: { format: "gif", resolution: 0, fps: 15, gifWidth: 480 } },
+  audio: { verb: "Extract audio", doing: "Extracting audio", suffix: "audio", initial: { format: "mp3", mute: false, resolution: 0, quality: 0.8 } },
 } satisfies Record<VideoTaskMode, { verb: string; doing: string; suffix: string; initial: Partial<VideoSettings> }>;
 
 // Compressor presets on today's settings fields. Tune against real clips.
@@ -59,8 +60,8 @@ function statusText(item: QueueItem) {
   return "Ready";
 }
 
-/** Video Compressor, Video Converter and Video to GIF: one engine, three task pages. */
-export default function VideoTask({ mode }: { mode: VideoTaskMode }) {
+/** Task pages share the existing engine, queue and export lifecycle. */
+export default function VideoTask({ mode, source, fixedFormat }: { mode: VideoTaskMode; source?: "MP4" | "MOV" | "WebM"; fixedFormat?: "mp4" }) {
   const config = modes[mode];
   const editor = useVideoEditor({ initialSettings: config.initial, suffix: config.suffix, shortcut: "all" });
   const { items, settings, setSettings, busy, capabilities } = editor;
@@ -93,7 +94,7 @@ export default function VideoTask({ mode }: { mode: VideoTaskMode }) {
 
   const preset = compressPresets.find((option) => option.patch.resolution === settings.resolution && option.patch.quality === settings.quality)?.value ?? null;
   const count = ready.length;
-  const primaryLabel = mode === "gif" ? (count > 1 ? `Make ${count} GIFs` : "Make GIF") : `${config.verb} ${count ? plural(count, "video") : "videos"}`;
+  const primaryLabel = mode === "gif" ? (count > 1 ? `Make ${count} GIFs` : "Make GIF") : mode === "audio" ? `Extract ${settings.format.toUpperCase()}${count > 1 ? ` · ${count} videos` : ""}` : `${config.verb} ${count ? plural(count, "video") : "videos"}`;
   const summary = describeExport(settings);
 
   const results: ResultItem[] = done.map((item) => ({
@@ -119,8 +120,8 @@ export default function VideoTask({ mode }: { mode: VideoTaskMode }) {
           multiple={mode !== "gif"}
           disabled={busy}
           onFiles={addFiles}
-          title={mode === "gif" ? "Drop a video to turn into a GIF" : `Drop videos to ${config.verb.toLowerCase()}`}
-          hint={mode === "gif" ? "MP4, MOV, WebM and more. Pick up to 30 seconds." : "MP4, MOV, WebM, MKV and more · up to 20 files"}
+          title={mode === "audio" ? "Drop videos to extract their audio" : mode === "gif" ? `Drop ${source ? `an ${source}` : "a video"} to turn into a GIF` : source ? `Drop ${source} videos to convert to MP4` : `Drop videos to ${config.verb.toLowerCase()}`}
+          hint={mode === "gif" ? "MP4, MOV, WebM and more. Pick up to 30 seconds." : `${source ? `${source} and other supported videos` : "MP4, MOV, WebM, MKV and more"} · up to 20 files · processed on this device`}
           icon={<Film className="h-6 w-6" strokeWidth={1.6} aria-hidden />}
           buttonLabel={mode === "gif" ? "Choose a video" : "Choose videos"}
         />
@@ -130,8 +131,8 @@ export default function VideoTask({ mode }: { mode: VideoTaskMode }) {
         </FileQueue>
       )}
 
-      {mode === "gif" && current?.info && (
-        <ClipRange item={current} settings={settings} setStart={(value) => update("trimStart", value)} setEnd={(value) => update("trimEnd", value)} disabled={busy} />
+      {(mode === "gif" || (mode === "audio" && ready.length === 1)) && current?.info && (
+        <ClipRange item={current} settings={settings} setStart={(value) => update("trimStart", value)} setEnd={(value) => update("trimEnd", value)} disabled={busy} audio={mode === "audio"} />
       )}
 
       <fieldset disabled={busy} className="space-y-4">
@@ -166,7 +167,7 @@ export default function VideoTask({ mode }: { mode: VideoTaskMode }) {
           </>
         )}
 
-        {mode === "convert" && (
+        {mode === "convert" && !fixedFormat && (
           <>
             <p className="text-sm font-medium">Convert to</p>
             <PresetPicker
@@ -186,6 +187,14 @@ export default function VideoTask({ mode }: { mode: VideoTaskMode }) {
           <PresetPicker label="GIF width" options={gifWidths} value={settings.gifWidth} onChange={(value) => value && update("gifWidth", value)} />
         )}
 
+        {mode === "convert" && fixedFormat && <p className="text-sm text-muted-foreground">Output: <span className="font-medium text-foreground">MP4</span> · Original dimensions · H.264 selected for compatibility. <Link href="/video-converter" className="underline underline-offset-4">Need another format?</Link></p>}
+
+        {mode === "audio" && <PresetPicker label="Audio format" options={[
+          { value: "mp3" as const, label: "MP3", hint: "Compact · broad compatibility" },
+          { value: "wav" as const, label: "WAV", hint: "Uncompressed PCM · larger files" },
+          { value: "aac" as const, label: "AAC", hint: "Compact · modern players" },
+        ]} value={settings.format} onChange={value => value && setFormat(value)} />}
+
         {noAudio.length > 0 && (
           <p className={s.inlineWarning}>No audio track was detected in {noAudio.map((item) => item.file.name).join(", ")}. Audio export needs a file with sound.</p>
         )}
@@ -196,7 +205,7 @@ export default function VideoTask({ mode }: { mode: VideoTaskMode }) {
         active={active}
         message={editor.message}
         label={primaryLabel}
-        disabled={!count}
+        disabled={!count || noAudio.length === count}
         onRun={() => act(editor.exportAll)}
         onCancel={editor.cancel}
         progressLabel={active ? `${config.doing} ${ready.findIndex((item) => item.id === active.id) + 1} of ${ready.length}` : undefined}
@@ -216,6 +225,8 @@ export default function VideoTask({ mode }: { mode: VideoTaskMode }) {
         compare={mode === "compress"}
         footer="Results stay in this tab until you save them."
       />
+
+      {mode === "audio" && done.length > 0 && <AudioPreview key={done[0].id} blob={done[0].result!.blob} name={done[0].result!.filename} />}
 
       <AdvancedPanel summary={summary}>
         <fieldset disabled={busy} className="grid gap-5 sm:grid-cols-2">
@@ -238,6 +249,13 @@ export default function VideoTask({ mode }: { mode: VideoTaskMode }) {
               </select>
             </Field>
           )}
+          {mode === "audio" && <>
+            <Slider label="Volume" value={settings.volume * 100} min={0} max={200} step={5} suffix="%" onChange={value => update("volume", value / 100)} />
+            <Switch label="Normalize loudness" description="Balance loudness for more consistent playback." value={settings.normalize} onChange={value => update("normalize", value)} />
+            <NumberField label="Start time" value={settings.trimStart} min={0} max={86400} step={0.1} suffix="sec" onChange={value => update("trimStart", value)} />
+            <NumberField label="End time · 0 = end of file" value={settings.trimEnd} min={0} max={86400} step={0.1} suffix="sec" onChange={value => update("trimEnd", value)} />
+            <p className="text-xs text-muted-foreground sm:col-span-2">Trim and audio settings apply to every queued video. MP3 and AAC re-encode the sound; WAV stores decoded audio without lossy compression. Larger WAV results may exceed the browser export limit.</p>
+          </>}
           {mode !== "gif" && !isAudio(settings.format) && settings.format !== "gif" && (
             <>
               <Field label="Codec">
@@ -374,8 +392,8 @@ function PrimaryBar({ busy, active, message, label, disabled, onRun, onCancel, p
   );
 }
 
-/** Pick the start and end of the clip for a GIF, up to LIMITS.gifSeconds. */
-function ClipRange({ item, settings, setStart, setEnd, disabled }: { item: QueueItem; settings: VideoSettings; setStart: (value: number) => void; setEnd: (value: number) => void; disabled: boolean }) {
+/** Source playback and a precise range, with a duration limit only for GIFs. */
+function ClipRange({ item, settings, setStart, setEnd, disabled, audio = false }: { item: QueueItem; settings: VideoSettings; setStart: (value: number) => void; setEnd: (value: number) => void; disabled: boolean; audio?: boolean }) {
   const video = useRef<HTMLVideoElement>(null);
   const [url, setUrl] = useState("");
   useEffect(() => { const next = URL.createObjectURL(item.file); setUrl(next); return () => URL.revokeObjectURL(next); }, [item.file]);
@@ -383,17 +401,17 @@ function ClipRange({ item, settings, setStart, setEnd, disabled }: { item: Queue
   const end = Math.min(settings.trimEnd || duration, duration);
   const start = Math.min(settings.trimStart, Math.max(0, end - 0.1));
   const length = Math.max(0, end - start) / settings.speed;
-  const tooLong = length > LIMITS.gifSeconds;
+  const tooLong = !audio && length > LIMITS.gifSeconds;
   const now = () => video.current?.currentTime ?? 0;
 
   return (
     <section aria-label="Choose the clip" className="grid gap-4 rounded-2xl border border-border bg-card p-4 sm:p-5 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-      <video ref={video} src={url || undefined} controls muted playsInline preload="metadata" className="aspect-video w-full rounded-xl bg-black object-contain" />
+      <video ref={video} src={url || undefined} controls muted={!audio} playsInline preload="metadata" aria-label="Source video preview" className="aspect-video w-full rounded-xl bg-black object-contain" />
       <div className="flex flex-col gap-4">
         <div>
-          <h2 className="text-sm font-medium">Choose the part to loop</h2>
+          <h2 className="text-sm font-medium">{audio ? "Choose the audio range" : "Choose the part to loop"}</h2>
           <p className={cn("mt-1 text-[13px] tabular-nums", tooLong ? "text-danger" : "text-muted-foreground")}>
-            {length.toFixed(1)} s selected · {LIMITS.gifSeconds} s max
+            {length.toFixed(1)} s selected{!audio && ` · ${LIMITS.gifSeconds} s max`}
           </p>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -402,8 +420,18 @@ function ClipRange({ item, settings, setStart, setEnd, disabled }: { item: Queue
           <button type="button" className={buttonClass("secondary", "sm")} disabled={disabled} onClick={() => setStart(Math.min(now(), end - 0.1))}>Start here</button>
           <button type="button" className={buttonClass("secondary", "sm")} disabled={disabled} onClick={() => setEnd(Math.max(now(), start + 0.1))}>End here</button>
         </div>
-        <p className="text-xs leading-relaxed text-muted-foreground">Play or scrub the video, then use Start here and End here. Shorter clips and smaller widths make smaller GIFs.</p>
+        <p className="text-xs leading-relaxed text-muted-foreground">Play or scrub the video, then use Start here and End here. {audio ? "Trim a sound effect or keep the full soundtrack." : "Shorter clips and smaller widths make smaller GIFs."}</p>
       </div>
     </section>
   );
+}
+
+function AudioPreview({ blob, name }: { blob: Blob; name: string }) {
+  const [url, setUrl] = useState("");
+  useEffect(() => { const next = URL.createObjectURL(blob); setUrl(next); return () => URL.revokeObjectURL(next); }, [blob]);
+  return <section className="rounded-2xl border border-border bg-card p-4" aria-label="Extracted audio preview">
+    <p className="mb-3 truncate text-sm font-medium" title={name}>{name}</p>
+    <audio controls preload="metadata" src={url || undefined} className="w-full" aria-label={`Preview ${name}`} />
+    <p className="mt-2 text-xs text-muted-foreground">Playback support depends on your browser. The downloaded file can also be opened in an audio player.</p>
+  </section>;
 }

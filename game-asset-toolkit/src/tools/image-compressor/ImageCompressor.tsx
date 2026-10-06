@@ -28,14 +28,22 @@ const formatHints: Record<OutputFormat, string> = {
   webp: "Small files with transparency; supported by every current browser.",
   jpeg: "Plays everywhere. Transparent areas get a background color.",
   avif: "Smallest files, slower to encode. Check your engine supports it.",
-  png: "Lossless: every pixel stays the same. Savings vary.",
+  png: "Lossless encoding with transparency. PNG files may be larger than JPEG or WebP.",
   jxl: "Experimental. Check the app that receives the file supports it.",
 };
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
 const sameSettings = (item: Item, settings: Settings) => JSON.stringify(item.settings) === JSON.stringify(settings);
 
-export default function ImageCompressor() {
-  const { items, settings, setSettings, notice, setNotice, maxPixels, add, start, cancel, remove, clear, busy } = useCompressor();
+export type ImageCompressorProps = {
+  /** Applied on mount; named conversion routes keep the existing compressor reusable. */
+  initialSettings?: Partial<Settings>;
+  job?: "compress" | "convert";
+  sourceLabel?: string;
+};
+export default function ImageCompressor({ initialSettings, job = "compress", sourceLabel }: ImageCompressorProps = {}) {
+  const initial = useRef<Settings>({ ...DEFAULTS, ...initialSettings });
+  const { items, settings, setSettings, notice, setNotice, maxPixels, add, start, cancel, remove, clear, busy } = useCompressor(initial.current);
+  const verb = job === "convert" ? "Convert" : "Compress";
   const folder = useRef<HTMLInputElement>(null), zipAbort = useRef<AbortController | null>(null), alive = useRef(true), preview = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState<string | null>(null), [importing, setImporting] = useState(false), [archive, setArchive] = useState<number | null>(null), [experimental, setExperimental] = useState(false);
 
@@ -96,7 +104,7 @@ export default function ImageCompressor() {
   const primary = busy
     ? <button type="button" className={buttonClass("secondary", "lg")} onClick={() => cancel()}><X className="h-4 w-4" aria-hidden />Cancel</button>
     : todo.length
-      ? <button type="button" className={buttonClass("primary", "lg")} disabled={archive !== null || importing} onClick={() => start(todo.map(x => x.id))}><ImageDown className="h-4 w-4" aria-hidden />Compress {plural(todo.length, "image")}</button>
+      ? <button type="button" className={buttonClass("primary", "lg")} disabled={archive !== null || importing} onClick={() => start(todo.map(x => x.id))}><ImageDown className="h-4 w-4" aria-hidden />{verb} {plural(todo.length, "image")}</button>
       : done.length
         ? <button type="button" className={buttonClass("primary", "lg")} onClick={() => archive !== null ? zipAbort.current?.abort() : void downloadAll()}>{archive !== null ? <><X className="h-4 w-4" aria-hidden />Cancel ZIP · {archive} of {done.length}</> : <><ArrowDownToLine className="h-4 w-4" aria-hidden />{done.length === 1 ? "Download" : "Download all (ZIP)"}</>}</button>
         : null;
@@ -110,7 +118,7 @@ export default function ImageCompressor() {
       compact={items.length > 0}
       onFiles={files => addAndStart(files.map(file => ({ file, path: file.name })))}
       onDropTransfer={fromTransfer}
-      title={importing ? "Adding your images…" : "Drop images to compress"}
+      title={importing ? "Adding your images…" : `Drop ${sourceLabel || "images"} to ${verb.toLowerCase()}`}
       hint={items.length ? "Drop more images or folders, or paste from the clipboard" : `JPEG, PNG, WebP or AVIF. Folders and paste work too. Up to 100 images, 20 MB each, ${Math.round(maxPixels / 1e6)} MP.`}
       icon={importing ? <Loader2 className="h-6 w-6 animate-spin" aria-hidden /> : <ImageDown className="h-6 w-6" strokeWidth={1.6} aria-hidden />}
       buttonLabel="Choose images"
@@ -119,7 +127,8 @@ export default function ImageCompressor() {
     />
 
     <div className="space-y-3">
-      <PresetPicker label="Compression level" options={presets} value={lossless ? null : preset} disabled={lossless} onChange={value => { if (value) setSettings(s => ({ ...s, quality: (s.format === "avif" ? AVIF_PRESET_QUALITY : PRESET_QUALITY)[value], targetKB: 0 })); }} />
+      {!lossless && <PresetPicker label="Compression level" options={presets} value={preset} disabled={busy} onChange={value => { if (value) setSettings(s => ({ ...s, quality: (s.format === "avif" ? AVIF_PRESET_QUALITY : PRESET_QUALITY)[value], targetKB: 0 })); }} />}
+      {lossless && <p className="rounded-xl border border-border bg-card px-4 py-3 text-sm"><span className="font-medium">Lossless PNG</span><span className="text-muted-foreground"> · No quality slider needed. {job === "compress" ? "Already optimized images may have little or no further size reduction." : "Keeps decoded image pixels without another lossy encoding step."}</span></p>}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
         <label className="flex items-center gap-2 text-sm font-medium">Output
           <select className="h-9 rounded-lg border border-border bg-card px-2.5 text-sm" value={settings.format} onChange={e => changeFormat(e.target.value as OutputFormat)} disabled={busy}>
@@ -139,7 +148,7 @@ export default function ImageCompressor() {
           {done.length ? <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-xl font-semibold tabular-nums tracking-tight">
             <span className="text-muted-foreground line-through decoration-1">{bytes(before)}</span><span aria-hidden>→</span><span className="sr-only">to</span><span>{bytes(after)}</span>
             <span className={cn("text-base", percent >= 0.5 ? "text-success" : "text-warning")}>{percent >= 0 ? `${percent.toFixed(0)}% smaller` : `${Math.abs(percent).toFixed(0)}% larger`}</span>
-          </p> : <p className="mt-1 text-sm text-muted-foreground">{busy ? "Compressing on your device…" : "Ready to compress"}</p>}
+          </p> : <p className="mt-1 text-sm text-muted-foreground">{busy ? `${job === "convert" ? "Converting" : "Compressing"} on your device…` : `Ready to ${verb.toLowerCase()}`}</p>}
           {busy && <p className="mt-1 text-[13px] text-muted-foreground" aria-live="polite">{plural(working.length, "image")} left…</p>}
         </div>
         {primary}
@@ -189,7 +198,7 @@ export default function ImageCompressor() {
         <div className={styles.toggleRow}><div><label id="compressor-jxl-label" htmlFor="compressor-jxl">Show experimental JPEG XL</label><p id="compressor-jxl-description">Check that the app or engine receiving the file supports it.</p></div><Toggle id="compressor-jxl" aria-labelledby="compressor-jxl-label" aria-describedby="compressor-jxl-description" checked={experimental} disabled={busy} onChange={value => { setExperimental(value); if (!value && settings.format === "jxl") changeFormat("original"); }} /></div>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
           <Offline onNotice={setNotice} />
-          <button className={buttonClass("ghost", "sm")} type="button" disabled={busy} onClick={() => { setSettings({ ...DEFAULTS }); setExperimental(false); }}><RotateCcw className="h-3.5 w-3.5" aria-hidden />Reset settings</button>
+          <button className={buttonClass("ghost", "sm")} type="button" disabled={busy} onClick={() => { setSettings({ ...initial.current }); setExperimental(initial.current.format === "jxl"); }}><RotateCcw className="h-3.5 w-3.5" aria-hidden />Reset settings</button>
         </div>
       </fieldset>
     </AdvancedPanel>
