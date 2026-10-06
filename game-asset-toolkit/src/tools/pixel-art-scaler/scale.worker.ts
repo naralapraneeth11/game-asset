@@ -3,7 +3,7 @@ import { cleanStem, LIMITS, type ScaleOutput, type SourceInfo, type WorkerReply,
 
 const scope = self as unknown as DedicatedWorkerGlobalScope;
 const reply = (message: WorkerReply) => scope.postMessage(message);
-const fail = (message: string): never => { throw new Error(message); };
+function fail(message: string): never { throw new Error(message); }
 
 /** Inspect dimensions before asking the browser to allocate decoded pixels. */
 async function inspect(file: File): Promise<SourceInfo> {
